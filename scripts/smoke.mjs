@@ -26,6 +26,8 @@ async function open(context) {
   await page.goto(url)
   await page.waitForSelector('[data-screen="title"].is-active', { timeout: 60_000 })
   assert(await page.evaluate(() => document.documentElement.lang === 'zh-CN'), 'game must stay in Simplified Chinese')
+  assert(await page.title() === '镜花缘', 'browser title must be 镜花缘')
+  assert(await page.locator('.logo-text').textContent() === '镜花缘', 'game title must be 镜花缘')
   return page
 }
 async function advance(page) {
@@ -44,10 +46,23 @@ async function sail(page) {
   await page.click('[data-action="pause-chart"]')
   await page.waitForSelector('.chart.is-active')
   assert(await page.locator('.chart-sea .port').count() === 7, 'sea chart must preserve seven kingdom anchors')
-  assert(await page.locator('.chart-sea svg path').count() >= 25, 'sea chart has no detailed island artwork')
-  await screenshot(page, '01a-sea-chart')
+  await page.waitForFunction(() => {
+    const images = [...document.querySelectorAll('.chart-sea .port.has-portrait img.island-portrait')]
+    return images.length === 7 && images.every(image => image.complete && image.naturalWidth >= 300)
+  }, undefined, { timeout: 60000 })
+  assert(await page.evaluate(() => { const sea = document.querySelector('.chart-sea'); return sea.scrollWidth <= sea.clientWidth + 2 }), 'map must not require horizontal scrolling')
+  assert(await page.locator('.chart-sea .port-visual').evaluateAll(nodes => nodes.every(node => node.getBoundingClientRect().height >= 60)), 'island portraits must not collapse into horizontal strips')
+  const view = page.viewportSize()
+  const close = await page.locator('[data-action="chart-close"]').boundingBox()
+  assert(close && close.x >= 0 && close.y >= 0 && close.x + close.width <= view.width && close.y + close.height <= view.height, 'chart close button must remain in viewport')
+  await screenshot(page, `01a-sea-chart-${view.width}x${view.height}`)
+  await page.locator('[data-port="penglai"]').scrollIntoViewIfNeeded()
+  await page.click('[data-port="penglai"]')
+  assert(await page.locator('[data-action="sail"]').isDisabled(), 'final chapter must be readable but not playable')
+  await page.locator('[data-port="daren"]').scrollIntoViewIfNeeded()
   await page.click('[data-port="daren"]')
   assert(await page.locator('[data-action="sail"]').isDisabled(), 'unfinished second chapter must not be playable')
+  await page.locator('[data-port="junzi"]').scrollIntoViewIfNeeded()
   await page.click('[data-port="junzi"]')
   await page.click('[data-action="sail"]')
   await page.waitForFunction(() => window.__game.voyage.sceneId === 'junzi' && window.__game.voyage.mode !== 'loading')
@@ -96,6 +111,39 @@ try {
   for (let i = 0; i < 60; i++) { try { if ((await fetch(url)).ok) break } catch {} await wait(250) }
   const args = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
   browser = await chromium.launch({ args }).catch(() => chromium.launch({ args, channel: 'chrome' }))
+  if (process.env.ATLAS_ONLY) {
+    for (const view of [{width:1280,height:800}, {width:844,height:390}, {width:390,height:844}]) {
+      const touch = view.width < 1000
+      const context = await browser.newContext({viewport:view,isMobile:touch,hasTouch:touch,deviceScaleFactor:touch ? 2 : 1})
+      const page = await open(context)
+      await page.click('[data-action="chart-title"]')
+      await page.waitForSelector('.chart.is-active')
+      await page.waitForFunction(() => {
+        const images = [...document.querySelectorAll('.chart-sea .port.has-portrait img.island-portrait')]
+        return images.length === 7 && images.every(image => image.complete && image.naturalWidth >= 300)
+      }, undefined, {timeout:60000})
+      assert(await page.locator('.chart-sea .port-visual').evaluateAll(nodes => nodes.every(node => node.getBoundingClientRect().height >= 60)), 'island portrait height collapsed')
+      assert(await page.evaluate(() => { const sea=document.querySelector('.chart-sea');return sea.scrollWidth<=sea.clientWidth+2 }), 'atlas has horizontal overflow')
+      await screenshot(page, `atlas-final-${view.width}x${view.height}`)
+      for (const id of ['junzi','daren','liangmian','wuchang','baimin','heichi','penglai']) {
+        await page.locator(`[data-port="${id}"]`).scrollIntoViewIfNeeded()
+        if (touch) await page.tap(`[data-port="${id}"]`); else await page.click(`[data-port="${id}"]`)
+        assert(await page.locator('[data-action="sail"]').isDisabled() === (id !== 'junzi'), `invalid sail state for ${id}`)
+        assert(await page.evaluate(() => {
+          const detail=document.querySelector('.chart-detail'), rect=detail.getBoundingClientRect()
+          return [...detail.children].every(node => { if (!node.getClientRects().length) return true; const r=node.getBoundingClientRect();return r.left>=rect.left-1&&r.right<=rect.right+1 })
+        }), 'detail content wrapped into columns outside its panel')
+      }
+      await screenshot(page, `atlas-final-detail-${view.width}x${view.height}`)
+      const close=await page.locator('[data-action="chart-close"]').boundingBox()
+      assert(close&&close.x>=0&&close.y>=0&&close.x+close.width<=view.width&&close.y+close.height<=view.height,'close is offscreen')
+      await page.click('[data-action="chart-close"]')
+      await page.waitForSelector('[data-screen="title"].is-active')
+      await context.close()
+    }
+    assert(errors.length===0, `atlas browser errors:\n${errors.join('\n')}`)
+    console.log('smoke: atlas OK — real portraits, seven selectable countries, detail width, native close and desktop/mobile layouts')
+  } else {
   if (!process.env.MOBILE_ONLY) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'en-US' })
   const page = await open(context)
@@ -210,6 +258,15 @@ try {
   await phone.evaluate(() => window.__game.voyage.debugInteract('小舟'))
   await phone.waitForFunction(() => window.__game.voyage.sceneId === 'hub' && window.__game.voyage.mode === 'explore')
   await phone.setViewportSize({ width: 390, height: 844 })
+  await phone.tap('[data-action="pause-chart"]'); await phone.waitForSelector('.chart.is-active')
+  assert(await phone.evaluate(() => { const sea = document.querySelector('.chart-sea'); return sea.scrollWidth <= sea.clientWidth + 2 }), 'portrait chart must fit horizontally')
+  await phone.locator('[data-port="penglai"]').scrollIntoViewIfNeeded()
+  await phone.tap('[data-port="penglai"]')
+  assert(await phone.locator('[data-action="sail"]').isDisabled(), 'portrait final chapter must stay in production')
+  await screenshot(phone, '11-mobile-portrait-chart')
+  await phone.locator('[data-port="junzi"]').scrollIntoViewIfNeeded()
+  await phone.tap('[data-port="junzi"]')
+  await phone.tap('[data-action="chart-close"]')
   await phone.tap('[data-action="local-map"]'); await phone.waitForSelector('.local-map.is-active')
   await screenshot(phone, '10-mobile-portrait')
   await phone.tap('[data-action="local-close"]')
@@ -217,6 +274,7 @@ try {
   await mobile.close()
   assert(errors.length === 0, `browser errors:\n${errors.join('\n')}`)
   console.log('smoke: OK — road, puzzle retries, save/reload, five landmarks, pickup, return, replay, Q-style and mobile map verified')
+  }
 } catch (error) {
   if (current && !current.isClosed()) {
     console.error('state:', await get(current).catch(() => null))

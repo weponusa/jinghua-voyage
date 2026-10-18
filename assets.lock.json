@@ -20,6 +20,10 @@
     "presentation": {
       "name": "卷轴界面与分享",
       "order": 50
+    },
+    "share": {
+      "name": "Share",
+      "order": 60
     }
   },
   "bundles": {},
@@ -385,6 +389,13 @@
       "path": "/manus-storage/game/sha256/dea8aa73c7e9918a4a91716de424713af27ab78f0e4e1c7e71bd35cb10cc8a7b.png",
       "sha256": "sha256:dea8aa73c7e9918a4a91716de424713af27ab78f0e4e1c7e71bd35cb10cc8a7b",
       "size": 27318,
+      "assetType": "image",
+      "groupId": "presentation"
+    },
+    "assets/share/og-jinghua.png": {
+      "path": "/manus-storage/game/sha256/44f8c9834d1d965acc42516102da7c335b1fca8d89d94ff232040cdb3779461d.png",
+      "sha256": "sha256:44f8c9834d1d965acc42516102da7c335b1fca8d89d94ff232040cdb3779461d",
+      "size": 1106043,
       "assetType": "image",
       "groupId": "presentation"
     },

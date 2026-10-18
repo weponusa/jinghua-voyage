@@ -1,389 +1,473 @@
-/* Detailed hand-painted sea chart. All controls remain HTML ports above a decorative SVG. */
+/* Seven-island chart: the dark sea stays outside; the voyage itself lives on a warm paper folio. */
 .chart {
-  --chart-ink: #284d4c;
-  --chart-ink-soft: #4d6f6b;
-  --chart-paper: #f7eed8;
-  --chart-sea-deep: #276d78;
-  --chart-sea-mid: #5f9ea0;
-  --chart-coral: #bd5b42;
-  --chart-gold: #ba9040;
+  --chart-ink: #214e4d;
+  --chart-ink-soft: #58746c;
+  --chart-paper: #f4e8c8;
+  --chart-paper-light: #fff6dc;
+  --chart-sea-deep: #083e49;
+  --chart-sea-mid: #176d72;
+  --chart-coral: #aa4a37;
+  --chart-gold: #c89a42;
+  --chart-cloud: #e8efe0;
+  color: var(--chart-ink);
+}
+
+/* Full-screen, restrained blue-green sea behind the floating paper. */
+.overlay.chart {
+  isolation: isolate;
+  padding: max(12px, var(--safe-t, 0px)) max(12px, var(--safe-r, 0px)) max(12px, var(--safe-b, 0px)) max(12px, var(--safe-l, 0px));
+  background:
+    radial-gradient(ellipse at 18% 13%, rgba(126, 199, 186, .18), transparent 34%),
+    radial-gradient(ellipse at 83% 82%, rgba(227, 197, 122, .11), transparent 29%),
+    repeating-radial-gradient(ellipse at 48% 58%, transparent 0 27px, rgba(168, 222, 204, .045) 28px 29px),
+    linear-gradient(137deg, #052d3d, #0a505a 48%, #073e4b);
+}
+.chart::before,
+.chart::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+.chart::before {
+  inset: 0;
+  opacity: .38;
+  background-image: radial-gradient(circle at 11% 19%, #f7e5a4 0 1px, transparent 1.8px), radial-gradient(circle at 88% 23%, #e6f4d8 0 1px, transparent 1.8px), radial-gradient(circle at 72% 74%, #f7e5a4 0 1.2px, transparent 2px), radial-gradient(circle at 27% 84%, #e6f4d8 0 .9px, transparent 1.8px);
+  background-size: 173px 151px, 217px 197px, 251px 193px, 139px 177px;
+}
+.chart::after {
+  left: 6%; right: 6%; bottom: 3%; height: 22%;
+  border-top: 1px solid rgba(199, 228, 206, .18);
+  border-radius: 50%;
+  box-shadow: 0 -18px 0 -17px rgba(218, 237, 213, .1), 0 -37px 0 -36px rgba(218, 237, 213, .08);
 }
 
 .chart .chart-paper {
-  width: min(1180px, 96vw);
-  height: min(720px, 94vh);
-  border: 1px solid rgba(66, 87, 75, .4);
-  border-top: 7px solid var(--azurite);
-  box-shadow: 0 28px 65px -30px rgba(18, 45, 47, .8), 0 5px 0 rgba(255,255,255,.48) inset;
-}
-
-.chart .chart-paper header {
   position: relative;
-  z-index: 3;
-  padding: 11px 16px;
-  background: linear-gradient(90deg, rgba(250,244,225,.94), rgba(242,231,203,.94));
-  box-shadow: 0 3px 11px rgba(52,71,61,.08);
+  width: min(1240px, calc(100vw - 28px));
+  height: min(740px, calc(100dvh - 28px));
+  max-height: calc(100dvh - 28px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(91, 66, 38, .58);
+  border-top: 7px solid #1b7775;
+  border-radius: 9px 13px 7px 11px;
+  clip-path: polygon(.5% 1%, 14% .35%, 31% .7%, 49% .2%, 66% .65%, 83% .25%, 99.5% 1%, 99.1% 28%, 99.7% 53%, 99.2% 77%, 99.6% 99.2%, 72% 99.6%, 50% 99.15%, 25% 99.6%, .4% 99.15%, .7% 75%, .25% 50%, .8% 24%);
+  background: linear-gradient(115deg, var(--chart-paper-light), var(--chart-paper) 62%, #e6d2a4);
+  box-shadow: 0 28px 72px rgba(1, 22, 31, .58), 0 3px 0 rgba(255, 252, 229, .62) inset, 0 -9px 18px rgba(93, 61, 29, .09) inset;
 }
+.chart .chart-paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .52;
+  background-image: radial-gradient(rgba(76, 86, 60, .18) .55px, transparent .8px), linear-gradient(100deg, transparent 0 4%, rgba(122, 80, 36, .035) 5%, transparent 7% 92%, rgba(122, 80, 36, .04) 95%, transparent 97%);
+  background-size: 8px 8px, 100% 100%;
+  mix-blend-mode: multiply;
+}
+.chart .chart-paper > header,
+.chart .chart-body { position: relative; z-index: 1; }
 
-.chart .chart-paper header h2 { color: var(--chart-ink); }
-.chart .chart-paper header p { color: #59665c; }
-.chart .chart-body { position: relative; min-height: 0; background: #ecdfbd; }
-
-.chart .chart-sea {
-  isolation: isolate;
-  flex: 1 1 auto;
+.chart .chart-paper > header {
+  min-height: 70px;
+  display: grid;
+  grid-template-columns: auto minmax(130px, 1fr) auto auto;
+  align-items: center;
+  gap: 11px 15px;
+  padding: 10px 17px 11px;
+  border-bottom: 1px dashed rgba(82, 99, 73, .48);
+  background: linear-gradient(90deg, rgba(255, 248, 223, .88), rgba(239, 222, 181, .76));
+  box-shadow: 0 3px 11px rgba(71, 62, 39, .08);
+}
+.chart .chart-paper > header h2 {
+  margin: 0;
+  color: var(--chart-ink);
+  font-size: clamp(19px, 2vw, 23px);
+  font-weight: 500;
+  letter-spacing: .28em;
+  white-space: nowrap;
+}
+.chart .chart-paper > header p {
   min-width: 0;
-  margin: 12px;
-  border: 1px solid rgba(40, 77, 76, .42);
-  border-radius: 5px;
-  overflow: auto;
-  overscroll-behavior: contain;
-  background: #bddbd5;
-  box-shadow: 0 3px 9px rgba(42, 62, 52, .22), 0 0 0 4px rgba(247,238,216,.73);
-  scrollbar-color: rgba(40,77,76,.55) rgba(247,238,216,.66);
-  scrollbar-width: thin;
+  margin: 0;
+  color: #5c6e62;
+  font-size: 12px;
+  line-height: 1.45;
 }
+.chart .chart-paper > header .icon-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  color: #305d59;
+}
+.chart .chart-paper > header .icon-btn:hover,
+.chart .chart-paper > header .icon-btn:focus-visible { background: rgba(35, 102, 97, .12); outline: 2px solid var(--chart-coral); outline-offset: 2px; }
 
-.chart .chart-sea::-webkit-scrollbar { width: 8px; height: 8px; }
-.chart .chart-sea::-webkit-scrollbar-thumb { background: rgba(40,77,76,.55); border-radius: 9px; border: 2px solid rgba(247,238,216,.66); }
-.chart .chart-sea::-webkit-scrollbar-track { background: rgba(247,238,216,.66); }
+.chart .chart-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  width: auto;
+  order: initial;
+  color: #526f65;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.chart .chart-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.chart .chart-legend span::before { content: ''; width: 8px; height: 8px; box-sizing: border-box; border: 1px solid rgba(40, 74, 67, .55); border-radius: 50%; background: #87918a; }
+.chart .chart-legend .is-open::before { background: #2b9482; border-color: #166f62; box-shadow: 0 0 0 2px rgba(200, 154, 66, .48); }
+.chart .chart-legend .is-done::before { background: var(--chart-gold); border-color: #9b701e; }
+.chart .chart-legend .is-soon::before { background: #aeb9ae; border-color: #778a81; }
+
+.chart .chart-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(270px, 28vw, 338px);
+  overflow: hidden;
+  background: linear-gradient(115deg, rgba(220, 234, 211, .62), rgba(227, 211, 173, .64));
+}
+.chart .chart-sea {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 12px 7px 12px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  isolation: isolate;
+  border: 1px solid rgba(24, 76, 75, .58);
+  border-radius: 8px 5px 7px 5px;
+  background: #176a6e;
+  box-shadow: 0 3px 10px rgba(30, 53, 45, .27), 0 0 0 4px rgba(255, 246, 216, .65);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(41, 101, 93, .75) rgba(245, 233, 198, .78);
+}
+.chart .chart-sea::-webkit-scrollbar { width: 9px; }
+.chart .chart-sea::-webkit-scrollbar-track { background: rgba(245, 233, 198, .78); }
+.chart .chart-sea::-webkit-scrollbar-thumb { border: 2px solid rgba(245, 233, 198, .78); border-radius: 10px; background: rgba(41, 101, 93, .75); }
 
 .chart .sea-chart-canvas {
   position: relative;
-  width: 100%;
-  min-width: 620px;
-  min-height: 0;
-  aspect-ratio: 10 / 7;
-  overflow: hidden;
-  background: #bddbd5;
-}
-
-.chart .sea-chart-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
+  min-height: 455px;
   height: 100%;
-  display: block;
-  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 52% 14%, rgba(193, 230, 210, .28), transparent 42%),
+    radial-gradient(ellipse at 18% 88%, rgba(11, 70, 75, .72), transparent 43%),
+    linear-gradient(155deg, #1c7e7d, #126269 53%, #0c4c59);
 }
-
-/* Water and paper receive quiet hand-ink movement, never pointer events. */
-.chart .sea-chart-waves path {
-  fill: none;
-  stroke: #3e8388;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  opacity: .26;
-}
-.chart .sea-chart-waves .sea-chart-wave-fine { stroke-width: 1.35; opacity: .34; }
-.chart .sea-chart-route {
-  fill: none;
-  stroke: var(--chart-coral);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-dasharray: 7 10;
-  opacity: .88;
-  filter: drop-shadow(0 1px 0 rgba(255,248,224,.75));
-}
-.chart .sea-chart-route-stars circle { fill: #f8e5a4; stroke: var(--chart-coral); stroke-width: 2; }
-
-.chart .sea-chart-island { transform-box: fill-box; transform-origin: center; }
-.chart .sea-chart-reef { fill: none; stroke: #e0f0db; stroke-width: 13; opacity: .72; }
-.chart .sea-chart-sand { fill: url(#sea-chart-sand); stroke: #b89158; stroke-width: 1.4; }
-.chart .sea-chart-land { fill: url(#sea-chart-land); stroke: #4d7b61; stroke-width: 1.4; }
-.chart .sea-chart-pale-land { fill: #d8e1cd; stroke: #769585; }
-.chart .sea-chart-dark-land { fill: #829b75; stroke: #496959; }
-.chart .sea-chart-mystic-land { fill: #a9c28f; stroke: #69856a; }
-.chart .sea-chart-path { fill: none; stroke: #a57145; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 3; opacity: .9; }
-.chart .sea-chart-hatch { fill: url(#sea-chart-hatch); stroke: none; }
-.chart .sea-chart-valley { fill: none; stroke: #5b725c; stroke-width: 5; stroke-linecap: round; opacity: .52; }
-.chart .sea-chart-terrace { fill: none; stroke: #718255; stroke-width: 2.2; stroke-linecap: round; }
-
-.chart .sea-chart-bamboo,
-.chart .sea-chart-arch,
-.chart .sea-chart-market,
-.chart .sea-chart-tower,
-.chart .sea-chart-small-cloud,
-.chart .sea-chart-double-mountain,
-.chart .sea-chart-masks,
-.chart .sea-chart-stove,
-.chart .sea-chart-smoke,
-.chart .sea-chart-academy,
-.chart .sea-chart-pine,
-.chart .sea-chart-book,
-.chart .sea-chart-lantern,
-.chart .sea-chart-cliff,
-.chart .sea-chart-penglai-peaks,
-.chart .sea-chart-mirror-terrace,
-.chart .sea-chart-cirrus {
-  fill: none;
-  stroke: #315950;
-  stroke-width: 2.25;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.chart .sea-chart-market { stroke: #87523b; }
-.chart .sea-chart-tower { stroke: #55617d; }
-.chart .sea-chart-small-cloud { fill: #f6f2dc; stroke: #8595a1; stroke-width: 1.7; }
-.chart .sea-chart-double-mountain { fill: #718867; stroke: #3f6555; }
-.chart .sea-chart-masks { fill: #f3dfb6; stroke: #875c43; stroke-width: 1.6; }
-.chart .sea-chart-stove { fill: #aa6744; stroke: #704538; }
-.chart .sea-chart-smoke { stroke: #78877b; stroke-width: 2; opacity: .78; }
-.chart .sea-chart-academy { fill: #f4ecd2; stroke: #5a6f69; }
-.chart .sea-chart-pine { stroke: #466f58; }
-.chart .sea-chart-book { fill: #f6eed8; stroke: #60767b; stroke-width: 1.5; }
-.chart .sea-chart-lantern { fill: #d8a650; stroke: #4b5d59; }
-.chart .sea-chart-cliff { fill: #617466; stroke: #41584f; }
-.chart .sea-chart-penglai-peaks { fill: #809a76; stroke: #476858; }
-.chart .sea-chart-mirror-terrace { fill: #f2e1b9; stroke: #59736b; }
-.chart .sea-chart-mirror-terrace circle { fill: #b5dde0; }
-.chart .sea-chart-cirrus { stroke: #eff2d9; stroke-width: 2.3; opacity: .9; }
-.chart .sea-chart-cloud-bank { fill: #edf2db; stroke: #91a7a2; stroke-width: 1.45; opacity: .9; }
-
-.chart .sea-chart-compass { fill: rgba(247,238,216,.74); stroke: #356b69; stroke-width: 1.35; }
-.chart .sea-chart-compass path { stroke-linejoin: round; }
-.chart .sea-chart-compass .sea-chart-compass-north { fill: var(--chart-coral); }
-.chart .sea-chart-compass text { fill: #315950; stroke: none; text-anchor: middle; dominant-baseline: middle; font: 15px var(--font); letter-spacing: .12em; }
-
-.chart .sea-chart-vessel { pointer-events: none; }
-.chart .sea-chart-vessel text { fill: #365d5b; font: 13px var(--font); letter-spacing: .08em; }
-.chart .sea-chart-ship-wake { fill: none; stroke: #e9f2df; stroke-width: 2.2; stroke-linecap: round; }
-.chart .sea-chart-ship-hull { fill: #704d3c; stroke: #493b31; stroke-width: 1.3; }
-.chart .sea-chart-ship-deck { fill: #b27a50; }
-.chart .sea-chart-mast { fill: none; stroke: #594332; stroke-width: 2.4; }
-.chart .sea-chart-sail-main { fill: #d9694b; stroke: #874532; stroke-width: 1.1; }
-.chart .sea-chart-sail-small { fill: #f1d7a1; stroke: #8a6346; stroke-width: 1.1; }
-
-.chart .sea-chart-status {
+.chart .sea-chart-canvas::before,
+.chart .sea-chart-canvas::after { content: ''; position: absolute; z-index: 1; pointer-events: none; }
+.chart .sea-chart-canvas::before { inset: 11px; border: 1px solid rgba(248, 226, 165, .36); border-radius: 4px; box-shadow: 0 0 0 4px rgba(9, 72, 76, .15) inset; }
+.chart .sea-chart-canvas::after { left: 13px; right: 13px; bottom: 27px; height: 1px; background: linear-gradient(90deg, transparent, rgba(245, 219, 150, .56), transparent); }
+.chart .sea-chart-backdrop { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; opacity: .84; }
+.chart .sea-chart-masthead {
   position: absolute;
   z-index: 2;
-  top: 15px;
-  left: 15px;
+  top: 20px;
+  left: 24px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  max-width: min(300px, 42%);
-  padding: 7px 10px;
-  border: 1px solid rgba(49,89,80,.35);
-  border-radius: 3px;
-  background: rgba(250,246,228,.84);
-  box-shadow: 0 2px 8px rgba(42,67,60,.12);
-  color: #3e5c55;
-  font-size: 12px;
-  line-height: 1.25;
-  letter-spacing: .04em;
+  gap: 8px;
+  color: #f8e9b2;
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-shadow: 0 1px 1px rgba(6, 50, 56, .6);
   pointer-events: none;
 }
-.chart .sea-chart-status b { color: #274f4d; font-weight: 400; font-size: 14px; white-space: nowrap; }
-.chart .sea-chart-status-mark { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #8f9080; box-shadow: 0 0 0 2px rgba(255,255,255,.7); }
-.chart .sea-chart-status-mark.is-open { background: var(--malachite); }
-.chart .sea-chart-status-mark.is-done { background: var(--chart-gold); }
-.chart .sea-chart-status-mark.is-soon { background: #84928d; }
-.chart .sea-chart-hint { position: absolute; z-index: 2; right: 15px; bottom: 13px; margin: 0; color: #3f6765; font-size: 12px; letter-spacing: .12em; text-shadow: 0 1px 0 rgba(255,255,255,.85); pointer-events: none; }
-
-.chart .sea-chart-ports { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-.chart .port {
+.chart .sea-chart-masthead span { font-weight: 600; }
+.chart .sea-chart-masthead i { width: 28px; height: 1px; background: currentColor; opacity: .72; }
+.chart .sea-chart-masthead small { font-size: 9px; letter-spacing: .13em; opacity: .84; }
+.chart .sea-chart-caption {
   position: absolute;
-  width: 50px;
-  height: 50px;
-  padding: 0;
+  z-index: 3;
+  right: 22px;
+  bottom: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 44px);
   margin: 0;
-  transform: translate(-50%, -50%);
+  color: #f4ebca;
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: .05em;
+  text-shadow: 0 1px 2px rgba(4, 44, 49, .8);
+  pointer-events: none;
+}
+.chart .sea-chart-caption b { font-weight: 600; white-space: nowrap; }
+.chart .sea-chart-status-mark { width: 7px; height: 7px; flex: none; border: 1px solid rgba(255, 244, 207, .88); border-radius: 50%; background: #aab8ae; }
+.chart .sea-chart-status-mark.is-open { background: #37ad94; box-shadow: 0 0 0 2px rgba(200, 154, 66, .58); }
+.chart .sea-chart-status-mark.is-done { background: var(--chart-gold); }
+
+/* Four islands above three: every item remains a real, full-card HTML button. */
+.chart .sea-chart-ports {
+  position: absolute;
+  z-index: 2;
+  inset: 48px 18px 35px;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 13px 10px;
+  pointer-events: auto;
+}
+.chart .port {
+  position: relative;
+  inset: auto;
+  grid-column: span 2;
+  width: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  height: auto;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  align-items: stretch;
+  justify-items: stretch;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  transform: none;
   border: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   background: transparent;
   color: var(--chart-ink);
   cursor: pointer;
   opacity: 1;
   filter: none;
-  pointer-events: auto;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: transform .18s var(--ease), filter .18s var(--ease);
+  transition: filter .16s ease, opacity .16s ease;
 }
-.chart .port::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border: 1px dashed rgba(43,92,82,.54);
-  border-radius: 50%;
-  opacity: 0;
-  transform: scale(.72);
-  transition: opacity .18s, transform .18s;
+.chart .port:nth-child(5) { grid-column: 2 / span 2; }
+.chart .port.is-soon { cursor: pointer; opacity: 1; filter: none; }
+.chart .port::before,
+.chart .port::after { content: none; }
+.chart .port-pin,
+.chart .port-info { display: contents; }
+/* Explicitly cancel the old rule that appended a second 制作中 label. */
+.chart .port-name::after { content: none !important; }
+
+.chart .port-visual {
+  position: relative;
+  display: block;
+  min-height: 90px;
+  overflow: hidden;
+  border: 1px solid rgba(244, 232, 197, .77);
+  border-radius: 48% 52% 43% 57% / 44% 42% 58% 56%;
+  background: linear-gradient(145deg, #5da59d, #236c70 70%);
+  box-shadow: 0 7px 10px rgba(4, 48, 53, .31), 0 1px 0 rgba(255, 248, 220, .44) inset;
+  isolation: isolate;
 }
-.chart .port-pin {
+.chart .port-visual::before,
+.chart .port-visual::after { content: ''; position: absolute; z-index: 3; pointer-events: none; }
+.chart .island-placeholder,
+.chart .island-portrait { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.chart .island-placeholder { object-fit: cover; }
+.chart .island-portrait { display: none; object-fit: cover; object-position: center; }
+.chart .port.has-portrait .island-portrait { display: block; }
+.chart .port.has-portrait .island-placeholder { display: none; }
+.chart .port.has-portrait .port-visual::after { inset: 0; background: linear-gradient(180deg, rgba(7, 53, 58, .02), rgba(8, 52, 56, .26)); mix-blend-mode: multiply; }
+.chart .port.is-open .port-visual::before {
+  inset: 6px;
+  border: 2px solid rgba(244, 206, 111, .96);
+  border-radius: inherit;
+  box-shadow: 0 0 0 3px rgba(167, 74, 55, .5), 0 0 13px rgba(255, 221, 130, .68);
+}
+.chart .port.is-done .port-visual { border-color: #f5d983; box-shadow: 0 0 0 2px rgba(166, 117, 31, .62), 0 7px 12px rgba(4, 48, 53, .31); }
+.chart .port.is-soon .port-visual { filter: saturate(.68) contrast(.96); }
+.chart .port.is-soon .port-visual::after {
+  inset: auto -10% -10% -10%;
+  height: 64%;
+  border-radius: 50% 50% 0 0 / 36% 36% 0 0;
+  background:
+    radial-gradient(ellipse at 17% 58%, rgba(239, 245, 226, .87) 0 20%, transparent 21%),
+    radial-gradient(ellipse at 42% 42%, rgba(232, 241, 222, .91) 0 29%, transparent 30%),
+    radial-gradient(ellipse at 73% 54%, rgba(239, 245, 226, .82) 0 27%, transparent 28%),
+    linear-gradient(180deg, transparent 0 27%, rgba(231, 241, 220, .84) 62%, rgba(212, 230, 210, .91));
+  box-shadow: 0 -4px 15px rgba(232, 243, 222, .46);
+}
+.chart .port-seal {
   position: absolute;
-  inset: 8px;
+  z-index: 5;
+  top: 7px;
+  right: 7px;
+  width: 27px;
+  height: 27px;
   display: grid;
   place-items: center;
-  border: 2px solid #285d5d;
-  border-radius: 50% 50% 50% 9px;
-  background: #f8eed8;
-  box-shadow: 0 2px 0 rgba(55,74,62,.24), 0 0 0 4px rgba(246,239,216,.42);
-  transform: rotate(-45deg);
-  transition: box-shadow .18s, background .18s, border-color .18s;
+  box-sizing: border-box;
+  border: 1px solid rgba(249, 239, 200, .86);
+  border-radius: 50%;
+  background: rgba(21, 87, 86, .9);
+  color: #f5d77d;
+  box-shadow: 0 2px 4px rgba(3, 45, 48, .28);
 }
-.chart .port-pin-core { width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; background: #6e9b81; transform: rotate(45deg); color: #ba9040; }
-.chart .port-pin-core > i { width: 5px; height: 5px; display: block; border-radius: 50%; background: #f8eed8; box-shadow: 0 0 0 1px rgba(41,84,79,.22); }
-.chart .port-pin svg { width: 16px; height: 16px; overflow: visible; }
+.chart .port-seal i { font-size: 11px; font-style: normal; line-height: 1; }
+.chart .port.is-soon .port-seal { color: #d7e0c9; background: rgba(68, 103, 94, .82); }
+.chart .port.is-done .port-seal { color: #c69632; background: #fff2c6; }
+.chart .port-seal svg { width: 19px; height: 19px; }
 
-.chart .port-info {
-  position: absolute;
-  z-index: 1;
+.chart .port-caption {
   display: grid;
-  justify-items: center;
-  gap: 2px;
-  min-width: 58px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 26px;
   padding: 3px 5px 4px;
-  border: 1px solid rgba(49,89,80,.4);
-  border-radius: 2px;
-  background: rgba(250,246,228,.91);
-  box-shadow: 0 1px 0 rgba(255,255,255,.65) inset, 0 2px 5px rgba(43,69,60,.14);
-  white-space: nowrap;
-  pointer-events: auto;
-  transition: background .18s, color .18s, border-color .18s, transform .18s;
+  border: 1px solid rgba(240, 223, 174, .66);
+  border-radius: 3px;
+  background: rgba(255, 246, 216, .93);
+  box-shadow: 0 2px 5px rgba(3, 53, 57, .2);
+  color: #285752;
+  text-align: left;
 }
+.chart .port-order,
 .chart .port-name,
-.chart .port-state { margin: 0; padding: 0; background: none; border: 0; box-shadow: none; text-shadow: none; }
-.chart .port.is-soon .port-name::after { content: none; }
-.chart .port.is-selected .port-name { background: none; color: inherit; }
-.chart .port-name { font-size: 14px; font-weight: 400; line-height: 1.1; letter-spacing: .12em; }
-.chart .port-state { font-size: 10px; line-height: 1; color: #526f65; letter-spacing: .1em; }
-
-/* Each label is deliberately offset from its geographical button, keeping island landmarks legible. */
-.chart .port--junzi .port-info { left: 38px; top: -7px; }
-.chart .port--daren .port-info { left: -20px; top: 40px; }
-.chart .port--liangmian .port-info { left: 38px; top: -8px; }
-.chart .port--wuchang .port-info { left: 38px; top: -8px; }
-.chart .port--baimin .port-info { right: 37px; top: -8px; }
-.chart .port--heichi .port-info { right: 37px; top: -8px; }
-.chart .port--penglai .port-info { right: 37px; top: 37px; }
-
-.chart .port.is-open .port-pin { border-color: #1d7166; background: #e6f0d4; }
-.chart .port.is-open .port-pin-core { background: var(--malachite); }
-.chart .port.is-open::after { content: ''; position: absolute; inset: 0; border: 1.5px solid rgba(51,137,119,.78); border-radius: 50%; animation: sea-chart-port-pulse 2.2s ease-out infinite; }
-.chart .port.is-done .port-pin { border-color: #a77b28; background: #fff3ca; }
-.chart .port.is-done .port-pin-core { width: 19px; height: 19px; background: transparent; }
-.chart .port.is-done .port-state { color: #8a661f; }
-.chart .port.is-soon .port-pin { border-color: #71847c; background: #edf0dc; }
-.chart .port.is-soon .port-pin-core { background: #9ba89a; }
-.chart .port.is-soon .port-info { opacity: .88; }
-
+.chart .port-state { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; text-shadow: none; white-space: nowrap; }
+.chart .port-order { color: #a64636; font-size: 9px; letter-spacing: .04em; }
+.chart .port-name { overflow: hidden; font-size: clamp(11px, 1.3vw, 14px); font-weight: 600; line-height: 1.1; letter-spacing: .08em; text-overflow: ellipsis; }
+.chart .port-state { color: #5d756b; font-size: 9px; line-height: 1; letter-spacing: .04em; }
+.chart .port.is-open .port-state { color: #137669; }
+.chart .port.is-done .port-state { color: #8e651a; }
+.chart .port.is-soon .port-state { color: #6e7c73; }
+.chart .port.is-selected .port-caption { border-color: #a94839; background: #fff1c9; color: #713d2e; box-shadow: 0 0 0 2px rgba(202, 154, 66, .65), 0 3px 7px rgba(3, 53, 57, .25); }
+.chart .port.is-selected .port-order { color: #9e3029; }
+.chart .port.is-selected .port-state { color: #8e651a; }
+.chart .port.is-selected .port-name { color: #713d2e; background: transparent; }
 .chart .port:hover,
-.chart .port:focus-visible,
-.chart .port.is-selected { z-index: 8; transform: translate(-50%, -50%) scale(1.09); filter: drop-shadow(0 5px 5px rgba(31,73,68,.23)); outline: none; }
-.chart .port:hover::before,
-.chart .port:focus-visible::before,
-.chart .port.is-selected::before { opacity: 1; transform: scale(1.2); }
-.chart .port:hover .port-pin,
-.chart .port:focus-visible .port-pin,
-.chart .port.is-selected .port-pin { background: #fff9e7; box-shadow: 0 2px 0 rgba(55,74,62,.26), 0 0 0 6px rgba(248,238,202,.8); }
-.chart .port:hover .port-info,
-.chart .port:focus-visible .port-info,
-.chart .port.is-selected .port-info { border-color: #285d5d; background: #285d5d; color: #fff6dd; transform: translateY(-1px); }
-.chart .port:hover .port-state,
-.chart .port:focus-visible .port-state,
-.chart .port.is-selected .port-state { color: #f2dc9b; }
-.chart .port:focus-visible .port-pin { box-shadow: 0 0 0 3px #fff7dd, 0 0 0 6px #c8412f; }
-.chart .port:active { transform: translate(-50%, -50%) scale(.98); }
+.chart .port.is-selected { z-index: 4; transform: none; filter: drop-shadow(0 4px 5px rgba(2, 44, 49, .26)); }
+.chart .port:hover .port-visual { border-color: #fff0b2; }
+.chart .port:active { transform: none; filter: brightness(.96); }
+.chart .port:focus-visible { z-index: 6; outline: 3px solid #c94c3b; outline-offset: 3px; border-radius: 8px; }
+.chart .port:focus-visible .port-caption { border-color: #a94839; background: #fff3d0; }
 
-.chart .chart-legend { display: flex; align-items: center; gap: 9px; margin-left: auto; color: #526f65; font-size: 11px; white-space: nowrap; }
-.chart .chart-legend span { display: inline-flex; align-items: center; gap: 4px; }
-.chart .chart-legend span::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #87918a; border: 1px solid rgba(42,69,62,.35); }
-.chart .chart-legend .is-open::before { background: var(--malachite); }
-.chart .chart-legend .is-done::before { background: var(--chart-gold); }
+.chart .chart-detail {
+  position: relative;
+  min-width: 0;
+  width: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 18px 19px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-left: 1px dashed rgba(93, 103, 75, .42);
+  background: linear-gradient(155deg, rgba(255, 249, 225, .82), rgba(237, 220, 178, .74));
+  scrollbar-width: thin;
+}
+.chart .chart-detail::before { content: '海外异闻'; position: absolute; top: 16px; right: 14px; color: rgba(54, 101, 87, .11); font-size: 28px; letter-spacing: .08em; writing-mode: vertical-rl; pointer-events: none; }
+.chart .chart-detail > * { position: relative; flex: 0 0 auto; min-width: 0; max-width: 100%; }
+.chart .chart-detail .cd-order { margin: 0; color: #a54837; font-size: 12px; letter-spacing: .18em; }
+.chart .chart-detail h3 { margin: 0; color: var(--chart-ink); font-size: clamp(23px, 2.5vw, 30px); font-weight: 500; letter-spacing: .13em; flex-direction: column; align-items: flex-start; }
+.chart .chart-detail h3 small { display: block; margin-top: 4px; color: #4d7e70; font-size: 13px; font-weight: 400; letter-spacing: .22em; }
+.chart .chart-detail p { margin: 0; color: #53675e; font-size: 14px; line-height: 1.72; flex: 0 0 auto; }
+.chart .chart-detail .cd-moral { color: #376f69 !important; }
+.chart .chart-detail .cd-build-note { padding: 7px 8px; border-left: 2px solid var(--chart-gold); background: rgba(200, 154, 66, .09); font-size: 12px !important; line-height: 1.58; }
+.chart .chart-detail .btn { min-height: 44px; margin-top: 3px; }
+.chart .chart-detail .btn:disabled { opacity: .62; cursor: not-allowed; }
 
-.chart .chart-detail { position: relative; width: 320px; padding: 18px 20px; border-left-color: rgba(91,103,76,.35); background: linear-gradient(155deg, rgba(250,244,225,.76), rgba(239,226,192,.7)); }
-.chart .chart-detail::before { content: '海外异闻'; position: absolute; top: 17px; right: 17px; color: rgba(61,101,91,.15); font-size: 32px; letter-spacing: .08em; writing-mode: vertical-rl; pointer-events: none; }
-.chart .chart-detail > * { position: relative; }
-.chart .chart-detail .cd-order { color: #a04b38; }
-.chart .chart-detail h3 { color: #284d4c; }
-.chart .chart-detail h3 small { color: #4d7e6f; }
-.chart .chart-detail .btn { position: relative; z-index: 1; }
-
-.chart .sea-chart-island--daren .sea-chart-small-cloud,
-.chart .sea-chart-island--penglai .sea-chart-cirrus { animation: sea-chart-drift 8s ease-in-out infinite alternate; }
-.chart .sea-chart-vessel { animation: sea-chart-bob 3.4s ease-in-out infinite; transform: translate(78px, 603px); transform-origin: 78px 603px; }
-@keyframes sea-chart-port-pulse { 0% { transform: scale(.78); opacity: .8; } 80%, 100% { transform: scale(1.44); opacity: 0; } }
-@keyframes sea-chart-drift { from { transform: translateX(-3px); } to { transform: translateX(5px); } }
-@keyframes sea-chart-bob { 0%, 100% { transform: translate(78px, 603px) rotate(0); } 50% { transform: translate(78px, 599px) rotate(-.8deg); } }
-
-/* Saved reduced-motion state lives on #ui; standalone previews may set it on .chart. */
-.chart.is-reduced-motion .port.is-open::after,
-.chart[data-reduced-motion="true"] .port.is-open::after,
-#ui.is-reduced-motion .chart .port.is-open::after,
-body.reduced-motion .chart .port.is-open::after,
-body.is-reduced-motion .chart .port.is-open::after { animation: none; opacity: .55; transform: scale(1.05); }
-.chart.is-reduced-motion .sea-chart-island--daren .sea-chart-small-cloud,
-.chart.is-reduced-motion .sea-chart-island--penglai .sea-chart-cirrus,
-.chart.is-reduced-motion .sea-chart-vessel,
-.chart[data-reduced-motion="true"] .sea-chart-island--daren .sea-chart-small-cloud,
-.chart[data-reduced-motion="true"] .sea-chart-island--penglai .sea-chart-cirrus,
-.chart[data-reduced-motion="true"] .sea-chart-vessel,
-#ui.is-reduced-motion .chart .sea-chart-island--daren .sea-chart-small-cloud,
-#ui.is-reduced-motion .chart .sea-chart-island--penglai .sea-chart-cirrus,
-#ui.is-reduced-motion .chart .sea-chart-vessel,
-body.reduced-motion .chart .sea-chart-island--daren .sea-chart-small-cloud,
-body.reduced-motion .chart .sea-chart-island--penglai .sea-chart-cirrus,
-body.reduced-motion .chart .sea-chart-vessel,
-body.is-reduced-motion .chart .sea-chart-island--daren .sea-chart-small-cloud,
-body.is-reduced-motion .chart .sea-chart-island--penglai .sea-chart-cirrus,
-body.is-reduced-motion .chart .sea-chart-vessel { animation: none; }
-
+/* Parent UI supplies this class when the player selects reduced motion. No port floats or pulses. */
+.chart.is-reduced-motion .port,
+.chart.is-reduced-motion .port *,
+.chart[data-reduced-motion="true"] .port,
+.chart[data-reduced-motion="true"] .port *,
+#ui.is-reduced-motion .chart .port,
+#ui.is-reduced-motion .chart .port *,
+body.reduced-motion .chart .port,
+body.reduced-motion .chart .port *,
+body.is-reduced-motion .chart .port,
+body.is-reduced-motion .chart .port * { animation: none !important; transition-duration: .01ms !important; }
+#ui.is-reduced-motion .chart .chart-paper,
+body.reduced-motion .chart .chart-paper,
+body.is-reduced-motion .chart .chart-paper { animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .chart .port.is-open::after,
-  .chart .sea-chart-island--daren .sea-chart-small-cloud,
-  .chart .sea-chart-island--penglai .sea-chart-cirrus,
-  .chart .sea-chart-vessel { animation: none; }
-  .chart .port,
-  .chart .port::before,
-  .chart .port-pin,
-  .chart .port-info { transition-duration: .01ms; }
+  .chart .port, .chart .port *, .chart .chart-paper { animation: none !important; transition-duration: .01ms !important; }
 }
 
 @media (max-width: 900px) {
-  .chart .chart-paper { width: min(100vw, 900px); height: min(100dvh, 760px); border-radius: 0; }
-  .chart .chart-paper header { gap: 10px; padding: 9px 12px; }
-  .chart .chart-paper header h2 { font-size: 19px; }
-  .chart .chart-paper header p { display: none; }
-  .chart .chart-legend { gap: 6px; font-size: 10px; }
-  .chart .chart-body { flex-direction: column; overflow: hidden; }
-  .chart .chart-sea { flex: 1 1 auto; min-height: 282px; margin: 9px 9px 6px; }
-  .chart .sea-chart-canvas { width: max(100%, 620px); min-height: 434px; }
-  .chart .chart-detail { width: auto; min-height: 135px; max-height: 34dvh; overflow: auto; border-top: 1px dashed rgba(91,103,76,.35); border-left: 0; padding: 11px 15px; }
-  .chart .chart-detail::before { top: 11px; right: 12px; font-size: 25px; }
-  .chart .chart-detail h3 { font-size: 23px; }
-  .chart .chart-detail p { font-size: 13px; }
-  .chart .chart-detail .btn { margin-top: 3px; }
+  .chart .chart-paper { width: min(100%, 900px); }
+  .chart .chart-paper > header { grid-template-columns: auto minmax(0, 1fr) auto; gap: 7px 10px; padding: 8px 12px; }
+  .chart .chart-paper > header p { grid-column: 1 / -1; grid-row: 2; padding-left: 1px; }
+  .chart .chart-legend { grid-column: 2; grid-row: 1; gap: 6px; }
+  .chart .chart-paper > header .icon-btn { grid-column: 3; grid-row: 1; }
+  .chart .chart-body { grid-template-columns: minmax(0, 1fr) 280px; }
+  .chart .chart-sea { margin: 10px 5px 10px 10px; }
+  .chart .chart-detail { padding: 14px 15px; }
 }
 
-@media (max-width: 560px) {
-  .chart .chart-paper header { padding-left: 10px; padding-right: 8px; }
-  .chart .chart-paper header h2 { letter-spacing: .25em; }
+/* Portrait phones use a two-column chart in an internal vertical scroller; no horizontal chart pan. */
+@media (max-width: 760px) and (orientation: portrait) {
+  .overlay.chart { padding: 0; }
+  .chart .chart-paper { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; clip-path: none; }
+  .chart .chart-paper > header { min-height: 62px; grid-template-columns: minmax(0, 1fr) auto; }
+  .chart .chart-paper > header h2 { font-size: 19px; }
+  .chart .chart-paper > header p { display: none; }
+  .chart .chart-legend { grid-column: 1; grid-row: 2; justify-content: flex-start; }
+  .chart .chart-paper > header .icon-btn { grid-column: 2; grid-row: 1 / span 2; }
+  .chart .chart-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(164px, .64fr); }
+  .chart .chart-sea { margin: 9px 9px 0; }
+  .chart .sea-chart-canvas { min-height: 524px; height: 524px; }
+  .chart .sea-chart-ports { inset: 47px 13px 35px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(106px, 1fr)); gap: 11px 12px; }
+  .chart .port,
+  .chart .port:nth-child(5) { grid-column: auto; }
+  .chart .port-visual { min-height: 74px; }
+  .chart .port-name { font-size: 13px; }
+  .chart .chart-detail { min-height: 0; padding: 11px 14px 13px; border-top: 1px dashed rgba(93, 103, 75, .42); border-left: 0; }
+  .chart .chart-detail::before { top: 11px; right: 11px; font-size: 24px; }
+  .chart .chart-detail h3 { font-size: 23px; }
+  .chart .chart-detail .btn { margin-top: 1px; }
+}
+
+@media (max-width: 430px) and (orientation: portrait) {
+  .chart .chart-paper > header { padding-left: 10px; padding-right: 8px; }
   .chart .chart-legend span { font-size: 0; }
   .chart .chart-legend span::before { width: 9px; height: 9px; }
-  .chart .chart-paper header .icon-btn { width: 40px; height: 40px; flex: none; }
-  .chart .chart-sea { min-height: 264px; }
-  .chart .sea-chart-canvas { min-width: 580px; min-height: 406px; }
-  .chart .sea-chart-status { top: 10px; left: 10px; max-width: 280px; padding: 5px 7px; }
-  .chart .sea-chart-status span:last-child { display: none; }
-  .chart .sea-chart-hint { right: 10px; bottom: 9px; }
-  .chart .port { width: 52px; height: 52px; }
-  .chart .port-name { font-size: 13px; }
-  .chart .chart-detail { max-height: 37dvh; min-height: 126px; padding: 9px 13px; }
-  .chart .chart-detail .cd-order { font-size: 11px; }
-  .chart .chart-detail h3 { font-size: 21px; }
-  .chart .chart-detail h3 small { font-size: 12px; }
+  .chart .sea-chart-masthead { top: 17px; left: 18px; }
+  .chart .sea-chart-caption { right: 15px; bottom: 10px; font-size: 10px; }
+  .chart .sea-chart-caption span:last-child { display: none; }
+  .chart .port-caption { gap: 3px; padding-left: 4px; padding-right: 4px; }
+  .chart .port-order { font-size: 8px; }
+  .chart .port-state { font-size: 8px; }
 }
 
-@media (max-height: 500px) and (min-width: 561px) {
-  .chart .chart-paper { height: 100dvh; }
-  .chart .chart-paper header { padding-top: 6px; padding-bottom: 6px; }
-  .chart .chart-paper header p { display: none; }
-  .chart .chart-body { flex-direction: row; }
-  .chart .chart-sea { min-height: 0; margin: 8px; }
-  .chart .chart-detail { width: 270px; flex: 0 0 270px; min-height: 0; max-height: none; padding: 10px 14px; overflow: auto; border-top: 0; }
-  .chart .chart-detail .cd-order,
-  .chart .chart-detail .cd-moral { display: none; }
-  .chart .chart-detail h3 { font-size: 22px; }
+/* Landscape deliberately keeps chart and detail side by side, including the close button and CTA. */
+@media (max-height: 600px) and (orientation: landscape) {
+  .overlay.chart { padding: 8px; }
+  .chart .chart-paper { width: min(1240px, calc(100vw - 16px)); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); }
+  .chart .chart-paper > header { min-height: 52px; grid-template-columns: auto minmax(0, 1fr) auto auto; padding: 5px 10px; }
+  .chart .chart-paper > header h2 { grid-column: 1; grid-row: 1; }
+  .chart .chart-paper > header p { grid-column: 2; grid-row: 1; }
+  .chart .chart-legend { grid-column: 3; grid-row: 1; }
+  .chart .chart-paper > header .icon-btn { grid-column: 4; grid-row: 1; }
+  .chart .chart-paper > header h2 { font-size: 18px; }
+  .chart .chart-paper > header p { font-size: 10px; }
+  .chart .chart-paper > header .icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+  .chart .chart-body { grid-template-columns: minmax(0, 1fr) 255px; }
+  .chart .chart-sea { margin: 8px 4px 8px 8px; }
+  .chart .sea-chart-canvas { min-height: 390px; }
+  .chart .sea-chart-ports { inset: 42px 12px 30px; gap: 8px; }
+  .chart .port-caption { min-height: 23px; padding-top: 2px; padding-bottom: 2px; }
+  .chart .port-name { font-size: 11px; }
+  .chart .port-state, .chart .port-order { font-size: 8px; }
+  .chart .port-seal { top: 5px; right: 5px; width: 23px; height: 23px; }
+  .chart .chart-detail { gap: 6px; padding: 9px 12px; }
+  .chart .chart-detail .cd-order, .chart .chart-detail .cd-moral { display: none; }
+  .chart .chart-detail h3 { font-size: 21px; }
+  .chart .chart-detail h3 small { font-size: 11px; }
+  .chart .chart-detail p { font-size: 12px; line-height: 1.48; }
+  .chart .chart-detail .btn { min-height: 40px; }
 }

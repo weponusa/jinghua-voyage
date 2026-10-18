@@ -56,3 +56,5 @@ shots/
 /assets/models/props/peach_tree.glb
 /assets/share/favicon.png
 /assets/share/og.png
+# Assets restored from assets.lock.json
+/assets/share/og-jinghua.png

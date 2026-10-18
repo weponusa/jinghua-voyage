@@ -8,6 +8,7 @@ import type { NavigationSnapshot } from '../game/navigation'
 import type { VoyageUi } from '../game/voyage'
 import { LocalMapRenderer } from './local-map'
 import { renderSeaChart } from './sea-chart'
+import type { IslandPortraits } from './island-portraits'
 
 export type Screen = 'boot' | 'title' | 'hud' | 'pause' | 'settings'
 
@@ -48,6 +49,8 @@ export class Ui implements VoyageUi {
   private lastPrompt = ''
   private navigationSnapshot: NavigationSnapshot | null = null
   private readonly mapRenderer = new LocalMapRenderer()
+  private islandPortraits: IslandPortraits = {}
+  private islandPortraitTask: Promise<IslandPortraits> | null = null
 
   constructor(private readonly save: SaveStore, private readonly audio: Audio, private readonly input: Input, private readonly actions: UiActions) {
     this.root = document.getElementById('ui')!
@@ -229,6 +232,15 @@ export class Ui implements VoyageUi {
     const el = this.q('.chart')
     const p = this.save.data.progress
     let selected: ChapterId = nextChapter(p) ?? 'junzi'
+    let closed = false
+    const paintMap = () => {
+      const sea = this.q('.chart-sea')
+      const scrollTop = sea.scrollTop
+      const focused = (document.activeElement as HTMLElement | null)?.closest<HTMLButtonElement>('[data-port]')?.dataset.port
+      sea.innerHTML = renderSeaChart(p, selected, this.islandPortraits)
+      sea.scrollTop = scrollTop
+      if (focused) sea.querySelector<HTMLButtonElement>(`[data-port="${focused}"]`)?.focus({ preventScroll: true })
+    }
     const detail = () => {
       const m = CHAPTERS[selected]
       const locked = !isUnlocked(p, selected)
@@ -239,17 +251,26 @@ export class Ui implements VoyageUi {
         <h3>${m.name}<small>${m.tagline}</small></h3>
         <p>${m.blurb}</p>
         ${isCompleted(p, selected) ? `<p class="cd-moral">所悟：${m.moral}</p>` : ''}
+        ${selected === 'junzi' ? `<p class="cd-log">见闻 ${p.junzi.visited.length}/5 · ${p.junzi.flowerCollected || isCompleted(p, selected) ? '镜花已得' : p.junzi.haggleSolved ? '市集公案已解' : '初访君子国'}</p>` : ''}
         <p class="cd-build-note">${!playable ? '此国故事仍在制作，现可阅览介绍，暂不能启航。' : locked ? '完成前序章节后方可启航。' : '本作当前仅开放第一章。'}</p>
         <button class="btn primary" data-action="sail" ${locked || !playable ? 'disabled' : ''}><span>${!playable ? '暂不可启航 · 制作中' : locked ? '尚未解锁' : isCompleted(p, selected) ? '重游此国' : '扬帆启航'}</span></button>`
-      this.q('.chart-sea').innerHTML = renderSeaChart(p, selected)
+      paintMap()
       for (const b of this.qa<HTMLElement>('.port')) b.classList.toggle('is-selected', b.dataset.port === selected)
     }
     detail()
     el.classList.add('is-active')
     this.root.classList.add('is-map-open')
+    this.islandPortraitTask ??= import('./island-portraits')
+      .then(module => module.createIslandPortraits())
+      .then(portraits => (this.islandPortraits = portraits))
+      .catch(() => this.islandPortraits)
+    void this.islandPortraitTask.then(() => {
+      if (!closed && el.classList.contains('is-active')) paintMap()
+    })
     return new Promise<ChapterId | null>(resolve => {
       this.overlayResolve = v => {
         if (v === 'select') return
+        closed = true
         el.classList.remove('is-active')
         this.root.classList.remove('is-map-open')
         this.overlayResolve = null
@@ -261,7 +282,7 @@ export class Ui implements VoyageUi {
         detail()
       }
       ;(el as HTMLElement & { _sail?: () => void })._sail = () => {
-        if (isUnlocked(p, selected)) this.overlayResolve?.(selected)
+        if (isPlayable(selected) && isUnlocked(p, selected)) this.overlayResolve?.(selected)
       }
     })
   }
@@ -519,15 +540,15 @@ export class Ui implements VoyageUi {
     return `
 <section class="screen boot" data-screen="boot">
   <div class="wave-mark">${WAVE_MARK_SVG}</div>
-  <p class="boot-title">海上拾花记</p>
+  <p class="boot-title">镜花缘</p>
   <div class="boot-bar"><i></i></div>
   <p class="boot-tip">展卷中……</p>
 </section>
 
 <section class="screen title" data-screen="title">
   <div class="title-col">
-    <h1 class="logo-text">海上拾花记</h1>
-    <div class="title-seal">《镜花缘》海外奇游</div>
+    <h1 class="logo-text">镜花缘</h1>
+    <div class="title-seal">海外奇游</div>
   </div>
   <div class="title-menu">
     <p class="tagline">随唐敖初访君子国，听市井让利，记海岛见闻。<br/>本作目前仅开放第一章；其余国家仍在制作中。</p>
@@ -593,8 +614,8 @@ export class Ui implements VoyageUi {
 </div>
 
 <div class="overlay chart">
-  <div class="chart-paper">
-    <header><h2>航海图</h2><p>可浏览各国介绍；目前仅第一章可启航。</p><div class="chart-legend"><span class="is-open">已开放</span><span class="is-done">已完成</span><span class="is-soon">制作中</span></div><button class="icon-btn" data-action="chart-close" aria-label="关闭"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
+  <div class="chart-paper" role="dialog" aria-modal="true" aria-label="镜花缘航海图">
+    <header><h2>镜花缘</h2><p>海上奇游 · 航海图</p><div class="chart-legend"><span class="is-open">已开放</span><span class="is-done">已完成</span><span class="is-soon">制作中</span></div><button class="icon-btn" data-action="chart-close" aria-label="关闭航海图"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
     <div class="chart-body">
       <div class="chart-sea"></div>
       <aside class="chart-detail"></aside>
