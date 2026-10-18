@@ -279,11 +279,14 @@ export class Ui implements VoyageUi {
       return Promise.resolve(null)
     }
     const el = this.q('.local-map')
+    this.q('.local-map header p').textContent = snapshot.map.id === 'hub' ? '海船 · 甲板' : '君子国 · 第一章'
     this.mapRenderer.open(this.q('.local-map-body'), snapshot)
     el.classList.add('is-active')
+    this.root.classList.add('is-map-open')
     return new Promise(resolve => {
       this.overlayResolve = value => {
         el.classList.remove('is-active')
+        this.root.classList.remove('is-map-open')
         this.mapRenderer.close()
         this.overlayResolve = null
         resolve(typeof value === 'string' ? value : null)
