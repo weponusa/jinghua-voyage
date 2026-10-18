@@ -1,0 +1,399 @@
+{
+  "version": 2,
+  "groups": {
+    "companions": {
+      "name": "唐敖与同行人",
+      "order": 10
+    },
+    "future-cast": {
+      "name": "后续章节素材",
+      "order": 40
+    },
+    "island-scenery": {
+      "name": "山海与建筑",
+      "order": 30
+    },
+    "junzi-cast": {
+      "name": "君子国人物",
+      "order": 20
+    },
+    "presentation": {
+      "name": "卷轴界面与分享",
+      "order": 50
+    }
+  },
+  "bundles": {},
+  "assets": {
+    "assets/fonts/ManusCC0SansCJKSC-Regular.woff2": {
+      "path": "/manus-storage/game/sha256/0a4981b817d7fb556dd8cd80f278483f1849017a312ca965e027d8e0e066968c.woff2",
+      "sha256": "sha256:0a4981b817d7fb556dd8cd80f278483f1849017a312ca965e027d8e0e066968c",
+      "size": 965224,
+      "assetType": "font",
+      "groupId": "presentation"
+    },
+    "assets/legacy-models/chars/baihua.glb": {
+      "path": "/manus-storage/game/sha256/51915959ee3cceba0cec6f02ebc24c61638276fce7292b5904286babdbbbaa13.glb",
+      "sha256": "sha256:51915959ee3cceba0cec6f02ebc24c61638276fce7292b5904286babdbbbaa13",
+      "size": 348780,
+      "assetType": "model",
+      "groupId": "future-cast"
+    },
+    "assets/legacy-models/chars/baimin.glb": {
+      "path": "/manus-storage/game/sha256/2ec0ecda0e63cc28956aeade905df8743687409f1947bfa3d199243cdb8494b0.glb",
+      "sha256": "sha256:2ec0ecda0e63cc28956aeade905df8743687409f1947bfa3d199243cdb8494b0",
+      "size": 311084,
+      "assetType": "model",
+      "groupId": "future-cast"
+    },
+    "assets/legacy-models/chars/heichi.glb": {
+      "path": "/manus-storage/game/sha256/1ff7d5953c49d3254ddaece8e54134e813be5391c409251c07cfb4828d85dd1f.glb",
+      "sha256": "sha256:1ff7d5953c49d3254ddaece8e54134e813be5391c409251c07cfb4828d85dd1f",
+      "size": 325468,
+      "assetType": "model",
+      "groupId": "future-cast"
+    },
+    "assets/legacy-models/chars/junzi.glb": {
+      "path": "/manus-storage/game/sha256/2350e96339c7d9361533586b10e1a73bf8e4ff75b3abe2c42a6a39c7be9ebb0e.glb",
+      "sha256": "sha256:2350e96339c7d9361533586b10e1a73bf8e4ff75b3abe2c42a6a39c7be9ebb0e",
+      "size": 331768,
+      "assetType": "model",
+      "groupId": "future-cast"
+    },
+    "assets/legacy-models/chars/liangmian.glb": {
+      "path": "/manus-storage/game/sha256/d5b80c0a1f44c60e99f4e553c112158aa21c049c1333388274d5be9904be3956.glb",
+      "sha256": "sha256:d5b80c0a1f44c60e99f4e553c112158aa21c049c1333388274d5be9904be3956",
+      "size": 340400,
+      "assetType": "model",
+      "groupId": "future-cast"
+    },
+    "assets/legacy-models/chars/wuchang.glb": {
+      "path": "/manus-storage/game/sha256/e10686492fec1bfd53e322048254dd25d62684761c8460834fa18c2d9717646a.glb",
+      "sha256": "sha256:e10686492fec1bfd53e322048254dd25d62684761c8460834fa18c2d9717646a",
+      "size": 345716,
+      "assetType": "model",
+      "groupId": "future-cast"
+    },
+    "assets/models/chars/buyer.glb": {
+      "path": "/manus-storage/game/sha256/4a495f67792e9f56e448797bd6b62653b435977e1b2f533da9a89af2bcd8fd4a.glb",
+      "sha256": "sha256:4a495f67792e9f56e448797bd6b62653b435977e1b2f533da9a89af2bcd8fd4a",
+      "size": 555216,
+      "assetType": "model",
+      "groupId": "junzi-cast"
+    },
+    "assets/models/chars/duojiugong.glb": {
+      "path": "/manus-storage/game/sha256/6916c1df0762e9ec2579281db55b6c373bf478f65dc3d202b959c4e77148bdf5.glb",
+      "sha256": "sha256:6916c1df0762e9ec2579281db55b6c373bf478f65dc3d202b959c4e77148bdf5",
+      "size": 640960,
+      "assetType": "model",
+      "groupId": "companions"
+    },
+    "assets/models/chars/elder.glb": {
+      "path": "/manus-storage/game/sha256/ccab64b37bbe2b1c76d6a6fe37e0372a42af59b59008b22f7ea62676e66351d8.glb",
+      "sha256": "sha256:ccab64b37bbe2b1c76d6a6fe37e0372a42af59b59008b22f7ea62676e66351d8",
+      "size": 553896,
+      "assetType": "model",
+      "groupId": "junzi-cast"
+    },
+    "assets/models/chars/linzhiyang.glb": {
+      "path": "/manus-storage/game/sha256/a6c57ffd658daf5b1d88cb90937197bee754fdc68d31341cf7b2059aba43c954.glb",
+      "sha256": "sha256:a6c57ffd658daf5b1d88cb90937197bee754fdc68d31341cf7b2059aba43c954",
+      "size": 573084,
+      "assetType": "model",
+      "groupId": "companions"
+    },
+    "assets/models/chars/oilseller.glb": {
+      "path": "/manus-storage/game/sha256/7cf49dc9a098c14769eb79549f290f2e5c66f149195bcbb00eaa301d221aca13.glb",
+      "sha256": "sha256:7cf49dc9a098c14769eb79549f290f2e5c66f149195bcbb00eaa301d221aca13",
+      "size": 604856,
+      "assetType": "model",
+      "groupId": "junzi-cast"
+    },
+    "assets/models/chars/seller.glb": {
+      "path": "/manus-storage/game/sha256/779c4f702ad67c85680b5698b7655ad22dfd1536a4326fbca1fb98030c79d97c.glb",
+      "sha256": "sha256:779c4f702ad67c85680b5698b7655ad22dfd1536a4326fbca1fb98030c79d97c",
+      "size": 630112,
+      "assetType": "model",
+      "groupId": "junzi-cast"
+    },
+    "assets/models/chars/tangao.glb": {
+      "path": "/manus-storage/game/sha256/f437e66dace1911a1e5c9a695087ca38934930ef53bd7d0e935565e16a2122c8.glb",
+      "sha256": "sha256:f437e66dace1911a1e5c9a695087ca38934930ef53bd7d0e935565e16a2122c8",
+      "size": 569280,
+      "assetType": "model",
+      "groupId": "companions"
+    },
+    "assets/models/nature/bridge_wood.glb": {
+      "path": "/manus-storage/game/sha256/3da4c208b0f72b7f2ba42db521b62ec4b0278050c75256a6982c40d21aab5701.glb",
+      "sha256": "sha256:3da4c208b0f72b7f2ba42db521b62ec4b0278050c75256a6982c40d21aab5701",
+      "size": 15692,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/canoe.glb": {
+      "path": "/manus-storage/game/sha256/ad9c7a315f55accbce8d1ee3dc853f919f01f97ab4e3096bb235d1815aed6941.glb",
+      "sha256": "sha256:ad9c7a315f55accbce8d1ee3dc853f919f01f97ab4e3096bb235d1815aed6941",
+      "size": 15780,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/fence_simple.glb": {
+      "path": "/manus-storage/game/sha256/ecaf6c29532aa9fd305a8ef71df769d60748bd797f2eb1c63bdefc4edb8062a7.glb",
+      "sha256": "sha256:ecaf6c29532aa9fd305a8ef71df769d60748bd797f2eb1c63bdefc4edb8062a7",
+      "size": 5712,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/flower_purpleA.glb": {
+      "path": "/manus-storage/game/sha256/f6fc34c96a03420a74fe36d4c2d0ec88f15204fcad99cd1416c3c4ecb22e48c4.glb",
+      "sha256": "sha256:f6fc34c96a03420a74fe36d4c2d0ec88f15204fcad99cd1416c3c4ecb22e48c4",
+      "size": 7112,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/flower_redA.glb": {
+      "path": "/manus-storage/game/sha256/171930b7789ddbf735af3745576b5393750beb9133b9ff4a444bb6bb2986c020.glb",
+      "sha256": "sha256:171930b7789ddbf735af3745576b5393750beb9133b9ff4a444bb6bb2986c020",
+      "size": 7104,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/flower_yellowA.glb": {
+      "path": "/manus-storage/game/sha256/8a3b08cd2ca411c21f9c581d5bda651d78b13c50cba45ad8fa0389398ead6d1d.glb",
+      "sha256": "sha256:8a3b08cd2ca411c21f9c581d5bda651d78b13c50cba45ad8fa0389398ead6d1d",
+      "size": 7120,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/grass.glb": {
+      "path": "/manus-storage/game/sha256/260e41d3e5f2472492ed7b475c5b92a30b13ce2bad408535b5ff50574d4575e7.glb",
+      "sha256": "sha256:260e41d3e5f2472492ed7b475c5b92a30b13ce2bad408535b5ff50574d4575e7",
+      "size": 11496,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/grass_large.glb": {
+      "path": "/manus-storage/game/sha256/af49a595624abca7249824eeefb944d4baf974abeeb5b16110d175da3563d6cd.glb",
+      "sha256": "sha256:af49a595624abca7249824eeefb944d4baf974abeeb5b16110d175da3563d6cd",
+      "size": 18504,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/lily_large.glb": {
+      "path": "/manus-storage/game/sha256/c8f7080df0ae3166e9d33f523b66360c2ac7556dff36cc9c8ee78b6a676c7db2.glb",
+      "sha256": "sha256:c8f7080df0ae3166e9d33f523b66360c2ac7556dff36cc9c8ee78b6a676c7db2",
+      "size": 8044,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/log.glb": {
+      "path": "/manus-storage/game/sha256/8c8fe8f6adfc03a3c0cd6cb24961ff74be96c2da284d70322f05797d049972d6.glb",
+      "sha256": "sha256:8c8fe8f6adfc03a3c0cd6cb24961ff74be96c2da284d70322f05797d049972d6",
+      "size": 14288,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/mushroom_redGroup.glb": {
+      "path": "/manus-storage/game/sha256/29f02df0589dd2b09e8d2aff6a4662394dac5cfcf1fec701640dcbd6127e0802.glb",
+      "sha256": "sha256:29f02df0589dd2b09e8d2aff6a4662394dac5cfcf1fec701640dcbd6127e0802",
+      "size": 14960,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/plant_bush.glb": {
+      "path": "/manus-storage/game/sha256/ae7b1beb39e242b13f5f29e3ec23ef21034b814f82297b8aa00a9bf4e1b09590.glb",
+      "sha256": "sha256:ae7b1beb39e242b13f5f29e3ec23ef21034b814f82297b8aa00a9bf4e1b09590",
+      "size": 4396,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/plant_bushLarge.glb": {
+      "path": "/manus-storage/game/sha256/10e1d9fbf29d96d1d1a56fb2ce25ae66537505101759229afe01ae22c6c45e02.glb",
+      "sha256": "sha256:10e1d9fbf29d96d1d1a56fb2ce25ae66537505101759229afe01ae22c6c45e02",
+      "size": 6436,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/pot_large.glb": {
+      "path": "/manus-storage/game/sha256/57e60214bc6ab1dc3764c9ffe80091ff45f2bfd49fbc313c1b68dcaab1537aef.glb",
+      "sha256": "sha256:57e60214bc6ab1dc3764c9ffe80091ff45f2bfd49fbc313c1b68dcaab1537aef",
+      "size": 6168,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/rock_largeA.glb": {
+      "path": "/manus-storage/game/sha256/6dd15390fd96501dcd1454765a17ba61dbbd8d47705dfe5149c8dd92b353ce25.glb",
+      "sha256": "sha256:6dd15390fd96501dcd1454765a17ba61dbbd8d47705dfe5149c8dd92b353ce25",
+      "size": 7552,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/rock_largeC.glb": {
+      "path": "/manus-storage/game/sha256/23aee8b727adeaf260207af3e0615dc69aa766c6d87de1d44cbc8c2711d74dd1.glb",
+      "sha256": "sha256:23aee8b727adeaf260207af3e0615dc69aa766c6d87de1d44cbc8c2711d74dd1",
+      "size": 7004,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/rock_smallA.glb": {
+      "path": "/manus-storage/game/sha256/df9fff9d711e61370e8df0caa2514c89b8f8a8dc6c6fafaf4eb2ec79c5ae07c1.glb",
+      "sha256": "sha256:df9fff9d711e61370e8df0caa2514c89b8f8a8dc6c6fafaf4eb2ec79c5ae07c1",
+      "size": 3044,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/rock_tallB.glb": {
+      "path": "/manus-storage/game/sha256/b3fb7899c317a3b026fa6ced0e1eaaa596d9dd0d95efeacfb5e05d25322f19b9.glb",
+      "sha256": "sha256:b3fb7899c317a3b026fa6ced0e1eaaa596d9dd0d95efeacfb5e05d25322f19b9",
+      "size": 14060,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/stone_largeB.glb": {
+      "path": "/manus-storage/game/sha256/2b6b96b701b42d96efaa92ad4aba0cc8d23417f1bc07f0e996ee1a5acd52b4b8.glb",
+      "sha256": "sha256:2b6b96b701b42d96efaa92ad4aba0cc8d23417f1bc07f0e996ee1a5acd52b4b8",
+      "size": 8132,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/stone_tallC.glb": {
+      "path": "/manus-storage/game/sha256/5fe5c30a5afe1aba91d998e295c1a95c26901cb8bb3f44b68b29eb052b7e019d.glb",
+      "sha256": "sha256:5fe5c30a5afe1aba91d998e295c1a95c26901cb8bb3f44b68b29eb052b7e019d",
+      "size": 4788,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/stump_round.glb": {
+      "path": "/manus-storage/game/sha256/e9b0f385f0ef98493ef716a055aa51e0b99efb8445279be7bb8bd83329a4c4af.glb",
+      "sha256": "sha256:e9b0f385f0ef98493ef716a055aa51e0b99efb8445279be7bb8bd83329a4c4af",
+      "size": 5644,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_blocks_fall.glb": {
+      "path": "/manus-storage/game/sha256/0f79f7f11578cfb0e3669468f09c86f0953bceb1b2ced3cb8ed2a2bb4ff2021b.glb",
+      "sha256": "sha256:0f79f7f11578cfb0e3669468f09c86f0953bceb1b2ced3cb8ed2a2bb4ff2021b",
+      "size": 18368,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_cone.glb": {
+      "path": "/manus-storage/game/sha256/90be4d214ee2cbf79d317677cb87fc11dac9873b73e446b75e8c12825a374272.glb",
+      "sha256": "sha256:90be4d214ee2cbf79d317677cb87fc11dac9873b73e446b75e8c12825a374272",
+      "size": 10924,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_default.glb": {
+      "path": "/manus-storage/game/sha256/562d29638c902de3c7bee465d3a53bb77117efbc392ae04ed894faf6b5dc691d.glb",
+      "sha256": "sha256:562d29638c902de3c7bee465d3a53bb77117efbc392ae04ed894faf6b5dc691d",
+      "size": 9428,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_fat.glb": {
+      "path": "/manus-storage/game/sha256/84b262c5dda3a91ac6c95f9d8b23a0ebbb1951d678c0e1375d3e32623cc43ee2.glb",
+      "sha256": "sha256:84b262c5dda3a91ac6c95f9d8b23a0ebbb1951d678c0e1375d3e32623cc43ee2",
+      "size": 5576,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_oak.glb": {
+      "path": "/manus-storage/game/sha256/d7fd8773674928c50c11b66d12c636d49bdcc15a8b1c7fbb98e6f63a3439a3f3.glb",
+      "sha256": "sha256:d7fd8773674928c50c11b66d12c636d49bdcc15a8b1c7fbb98e6f63a3439a3f3",
+      "size": 14644,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_palmBend.glb": {
+      "path": "/manus-storage/game/sha256/8af9dae16ce3c03183f9457996ebdd135167199514e8f4f944ee2bd82828d5c9.glb",
+      "sha256": "sha256:8af9dae16ce3c03183f9457996ebdd135167199514e8f4f944ee2bd82828d5c9",
+      "size": 14820,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_palmTall.glb": {
+      "path": "/manus-storage/game/sha256/cbd2c2ea7d0316be7514d44699527c566ce91e0542e8b6c6bf431a155e5655f6.glb",
+      "sha256": "sha256:cbd2c2ea7d0316be7514d44699527c566ce91e0542e8b6c6bf431a155e5655f6",
+      "size": 15592,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_pineRoundA.glb": {
+      "path": "/manus-storage/game/sha256/7dc9711f31585eafdcb965d0649c30af5e19f2def1955f7a915081d30759ef8e.glb",
+      "sha256": "sha256:7dc9711f31585eafdcb965d0649c30af5e19f2def1955f7a915081d30759ef8e",
+      "size": 14488,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_pineRoundC.glb": {
+      "path": "/manus-storage/game/sha256/29080a4935bae6b4ab29066f22c99c58f88b23ce4e2f79b4dcbb5e76de73f69d.glb",
+      "sha256": "sha256:29080a4935bae6b4ab29066f22c99c58f88b23ce4e2f79b4dcbb5e76de73f69d",
+      "size": 15332,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/nature/tree_pineTallA.glb": {
+      "path": "/manus-storage/game/sha256/e0a56eb196d8a64ba86c7304d607136e17e6f9ad748dffcf86bd53b18b91b196.glb",
+      "sha256": "sha256:e0a56eb196d8a64ba86c7304d607136e17e6f9ad748dffcf86bd53b18b91b196",
+      "size": 7200,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/props/house.glb": {
+      "path": "/manus-storage/game/sha256/ef69d8b1cdbb77c9e5ded9d25b5b4bba80a8a21269f01403bfb56145185945e4.glb",
+      "sha256": "sha256:ef69d8b1cdbb77c9e5ded9d25b5b4bba80a8a21269f01403bfb56145185945e4",
+      "size": 460488,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/props/junk_ship.glb": {
+      "path": "/manus-storage/game/sha256/d6c7f219fd2022d02f570dc94d2c46349f9b2bd6ba06d2ba202ecaff81237bcf.glb",
+      "sha256": "sha256:d6c7f219fd2022d02f570dc94d2c46349f9b2bd6ba06d2ba202ecaff81237bcf",
+      "size": 499180,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/props/market_stall.glb": {
+      "path": "/manus-storage/game/sha256/9559a0792f9f74465f0013733a16a311557c5e6465a33c8d1105962ccd71b0cd.glb",
+      "sha256": "sha256:9559a0792f9f74465f0013733a16a311557c5e6465a33c8d1105962ccd71b0cd",
+      "size": 495340,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/props/paifang.glb": {
+      "path": "/manus-storage/game/sha256/dbd6de12288eaf1a662ad195fdfaef5fac697c44705a4376e71dacfbf339c131.glb",
+      "sha256": "sha256:dbd6de12288eaf1a662ad195fdfaef5fac697c44705a4376e71dacfbf339c131",
+      "size": 631544,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/props/pavilion.glb": {
+      "path": "/manus-storage/game/sha256/f8003aa85b8d3270284360f825ca51f75cba685e7a1d5885bc8e51ce3784c64d.glb",
+      "sha256": "sha256:f8003aa85b8d3270284360f825ca51f75cba685e7a1d5885bc8e51ce3784c64d",
+      "size": 576740,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/models/props/peach_tree.glb": {
+      "path": "/manus-storage/game/sha256/82f2e46d97b358503f45553c1f15f2ea007d8de71f1e6368df51e6f7831ba9a2.glb",
+      "sha256": "sha256:82f2e46d97b358503f45553c1f15f2ea007d8de71f1e6368df51e6f7831ba9a2",
+      "size": 472404,
+      "assetType": "model",
+      "groupId": "island-scenery"
+    },
+    "assets/share/favicon.png": {
+      "path": "/manus-storage/game/sha256/dea8aa73c7e9918a4a91716de424713af27ab78f0e4e1c7e71bd35cb10cc8a7b.png",
+      "sha256": "sha256:dea8aa73c7e9918a4a91716de424713af27ab78f0e4e1c7e71bd35cb10cc8a7b",
+      "size": 27318,
+      "assetType": "image",
+      "groupId": "presentation"
+    },
+    "assets/share/og.png": {
+      "path": "/manus-storage/game/sha256/502d5dde6042f075783ab4d3ea4e5e9efc4f6c084f8c560c4d7496ba820aed72.png",
+      "sha256": "sha256:502d5dde6042f075783ab4d3ea4e5e9efc4f6c084f8c560c4d7496ba820aed72",
+      "size": 2055169,
+      "assetType": "image",
+      "groupId": "presentation"
+    }
+  }
+}
