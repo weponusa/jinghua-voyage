@@ -3,7 +3,7 @@ import { RAPIER, type Physics } from '../engine/physics'
 import { CONFIG } from './config'
 import { villager } from './stage'
 import { tuning } from './tuning'
-import { disposeScene } from './dispose'
+import { CharacterAnimation } from './character-animation'
 
 /** A kinematic platform the player can ride (none in this game yet, kept for the controller). */
 export type MovingPlatform = { body: RAPIER.RigidBody; half: THREE.Vector3; delta: THREE.Vector3 }
@@ -36,7 +36,7 @@ export class Player {
   private dashTime = 0
   private dashCooldown = 0
   private squash = 0
-  private runCycle = 0
+  private animation: CharacterAnimation
   private platform?: MovingPlatform
   /** Last position where the player stood on solid, static ground (respawn point after a fall). */
   readonly safe = new THREE.Vector3()
@@ -59,7 +59,8 @@ export class Player {
     this.root.position.copy(spawn)
     // Feet sit at the bottom of the capsule.
     this.figure.position.y = -(P.halfHeight + P.radius)
-    this.figure.add(villager('#3d6fa3', { hat: '#2a2622', height: 1.75, hatShape: 'tall' }))
+    this.animation = new CharacterAnimation(villager('#3d6fa3', { hat: '#2a2622', height: 1.75, hatShape: 'tall' }))
+    this.figure.add(this.animation.root)
     this.model.add(this.figure)
     this.model.rotation.order = 'YXZ'
     this.root.add(this.model)
@@ -79,8 +80,14 @@ export class Player {
 
   /** Swap the stand-in figure for the loaded character model (feet at local y = 0, facing -Z). */
   setModel(obj: THREE.Object3D): void {
-    disposeScene(this.figure)
-    this.figure.add(obj)
+    this.animation.dispose()
+    this.figure.clear()
+    this.animation = new CharacterAnimation(obj)
+    this.figure.add(this.animation.root)
+  }
+
+  get animationInfo(): ReturnType<CharacterAnimation['inspect']> {
+    return this.animation.inspect()
   }
 
   get position(): THREE.Vector3 {
@@ -214,16 +221,13 @@ export class Player {
   animate(frameSeconds: number, time: number, invulnerable: boolean, ground: number | null): void {
     const speed = Math.hypot(this.velocity.x, this.velocity.z)
     this.model.rotation.y = this.facing
+    this.animation.update(frameSeconds, { speed: this.frozen ? 0 : speed, grounded: this.grounded || this.frozen, verticalSpeed: this.velocity.y })
     this.squash = THREE.MathUtils.damp(this.squash, 0, 10, frameSeconds)
-    const stretch = this.grounded ? 0 : THREE.MathUtils.clamp(this.velocity.y / 60, -0.12, 0.18)
-    const s = 1 - this.squash + stretch
+    const s = 1 - this.squash * 0.2
     this.model.scale.set(1 / Math.sqrt(Math.max(s, 0.5)), s, 1 / Math.sqrt(Math.max(s, 0.5)))
-    if (this.grounded && speed > 0.5) this.runCycle += frameSeconds * speed * 1.6
-    const bob = this.grounded ? Math.abs(Math.sin(this.runCycle)) * 0.08 * Math.min(1, speed / 6) : 0
-    this.model.position.y = bob
-    this.model.rotation.x = -Math.min(0.14, speed / 60)
-    // Waddle: the static model rocks side to side while walking, like a paper puppet.
-    this.model.rotation.z = this.grounded ? Math.sin(this.runCycle) * 0.09 * Math.min(1, speed / 5) : 0
+    this.model.position.y = 0
+    this.model.rotation.x = 0
+    this.model.rotation.z = 0
     this.model.visible = !invulnerable || Math.floor(time * 16) % 2 === 0
 
     // Blob shadow: always-on depth cue for platforming, even with real shadows disabled.

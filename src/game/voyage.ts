@@ -441,6 +441,7 @@ export class Voyage {
     const dt = this.mode === 'paused' ? 0 : frameSeconds
     this.time += dt
     a.physics.sync(alpha)
+    a.player.frozen = this.mode !== 'explore'
     a.player.animate(frameSeconds, this.time, false, a.player.grounded ? a.player.root.position.y - 0.92 : null)
     const p = a.player.root.position
     for (const n of a.npcs) n.update(dt, p)
@@ -496,7 +497,7 @@ export class Voyage {
 
   debug(): unknown {
     const a = this.active
-    return a && { scene: a.def.id, pos: a.player.root.position.clone(), things: a.things.map(t => t.name), hasFlower: a.hasFlower, mode: this.mode }
+    return a && { scene: a.def.id, pos: a.player.root.position.clone(), things: a.things.map(t => t.name), hasFlower: a.hasFlower, mode: this.mode, animation: a.player.animationInfo }
   }
 
   /** Test hook: teleport near an interactable and run it. */

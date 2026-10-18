@@ -6,6 +6,7 @@ export function disposeScene(root: THREE.Object3D): void {
   const materials = new Set<THREE.Material>()
   const textures = new Set<THREE.Texture>()
   root.traverse(o => {
+    if (typeof o.userData.disposeCharacter === 'function') o.userData.disposeCharacter()
     if (o.userData.sharedModel) return
     const mesh = o as THREE.Mesh
     if (mesh.isMesh) {

@@ -43,6 +43,9 @@ async function advance(page) {
 async function sail(page) {
   await page.click('[data-action="pause-chart"]')
   await page.waitForSelector('.chart.is-active')
+  assert(await page.locator('.chart-sea .port').count() === 7, 'sea chart must preserve seven kingdom anchors')
+  assert(await page.locator('.chart-sea svg path').count() >= 25, 'sea chart has no detailed island artwork')
+  await screenshot(page, '01a-sea-chart')
   await page.click('[data-port="daren"]')
   assert(await page.locator('[data-action="sail"]').isDisabled(), 'unfinished second chapter must not be playable')
   await page.click('[data-port="junzi"]')
@@ -68,7 +71,26 @@ async function hookInteract(page, name) {
   await page.waitForTimeout(100)
   await advance(page)
 }
-async function screenshot(page, name) { await page.waitForTimeout(350); await page.screenshot({ path: `${out}/${name}.png`, timeout: 15000 }) }
+async function screenshot(page, name) { await page.waitForTimeout(350); await page.screenshot({ path: `${out}/${name}.png`, timeout: 15000, animations: 'disabled' }) }
+
+async function rigPose(page) {
+  return page.evaluate(() => {
+    const a = window.__game.voyage.active
+    const skins = []
+    a.player.root.traverse(o => { if (o.isSkinnedMesh) skins.push(o) })
+    const mesh = skins[0]
+    if (!mesh) return { bones: [], vertices: [], count: 0 }
+    a.player.root.updateMatrixWorld(true)
+    mesh.skeleton.update()
+    const p = mesh.geometry.getAttribute('position'), vertices = []
+    for (let i = 0; i < p.count; i += Math.max(1, Math.floor(p.count / 48))) {
+      const v = a.player.root.position.clone().fromBufferAttribute(p, i)
+      mesh.applyBoneTransform(i, v)
+      vertices.push(v.x, v.y, v.z)
+    }
+    return { bones: mesh.skeleton.bones.flatMap(b => b.quaternion.toArray()), vertices, count: skins.length }
+  })
+}
 
 try {
   for (let i = 0; i < 60; i++) { try { if ((await fetch(url)).ok) break } catch {} await wait(250) }
@@ -81,6 +103,18 @@ try {
   await page.click('[data-action="start"]'); await advance(page)
   await sail(page)
   await screenshot(page, '02-island')
+  const idlePose = await rigPose(page)
+  assert(idlePose.count >= 1 && idlePose.bones.length >= 16 * 4, 'player has no real skeleton/skinned mesh')
+  await page.keyboard.down('KeyW')
+  await page.waitForFunction(() => /walk/.test(window.__game.voyage.debug().animation.state), undefined, { timeout: 10000 })
+  await page.waitForTimeout(260)
+  const movingPose = await rigPose(page)
+  assert(movingPose.bones.some((v, i) => Math.abs(v - idlePose.bones[i]) > 0.025), 'walking did not animate independent bones')
+  assert(movingPose.vertices.some((v, i) => Math.abs(v - idlePose.vertices[i]) > 0.004), 'walking did not deform skinned vertices')
+  await screenshot(page, '02a-skeletal-walk')
+  await page.keyboard.up('KeyW')
+  await page.waitForFunction(() => /idle/i.test(window.__game.voyage.debug().animation.state), undefined, { timeout: 10000 })
+  assert(/idle/i.test((await get(page)).animation.state), 'stopping must blend back to idle')
   await page.keyboard.press('KeyM'); await page.waitForSelector('.local-map.is-active')
   assert(await page.locator('.local-map .terrain-coast').count() === 1, 'actual coastline missing')
   assert(await page.locator('[data-map-landmark]').count() === 5, 'five landmarks missing')
@@ -143,10 +177,11 @@ try {
   await page.waitForFunction(() => !window.__game.voyage.styleChanging && window.__game.voyage.mode === 'paused')
   assert(await page.evaluate(() => {
     const a = window.__game.voyage.active; let shared = false
-    a.player.root.traverse(o => { if (o.userData.sharedModel) shared = true })
+    a.player.root.traverse(o => { if (o.userData.sharedModel && !o.isSkinnedMesh && o.isMesh) shared = true })
     return window.__game.save.data.modelStyle === 'chibi' && !shared
   }), 'rapid style switch did not keep last choice')
   await page.keyboard.press('Escape'); await page.click('[data-action="resume"]')
+  assert((await rigPose(page)).count >= 1, 'Q-style must also retain a real skinned rig')
   await screenshot(page, '08-chibi')
   await context.close()
   console.log('smoke: desktop OK — real road, puzzle retry, save/reload, five observations, return, replay and rapid Q-style switching')
@@ -183,7 +218,11 @@ try {
   assert(errors.length === 0, `browser errors:\n${errors.join('\n')}`)
   console.log('smoke: OK — road, puzzle retries, save/reload, five landmarks, pickup, return, replay, Q-style and mobile map verified')
 } catch (error) {
-  if (current && !current.isClosed()) { console.error('state:', await get(current).catch(() => null)); await screenshot(current, 'failure').catch(() => {}) }
+  if (current && !current.isClosed()) {
+    console.error('state:', await get(current).catch(() => null))
+    console.error('motion:', await current.evaluate(() => { const g = window.__game, p = g.voyage.active.player; return { keys: [...g.input.keys], move: g.input.move, frozen: p.frozen, velocity: p.velocity, animationTime: p.animation?.mixer.time } }).catch(() => null))
+    await screenshot(current, 'failure').catch(() => {})
+  }
   console.error('browser errors:', errors.join('\n'))
   console.error('smoke: FAIL', error?.stack ?? String(error)); process.exitCode = 1
 } finally {

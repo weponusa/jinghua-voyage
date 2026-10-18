@@ -1,4 +1,5 @@
 import './styles/jinghua.css'
+import './styles/sea-chart.css'
 import { Audio } from './engine/audio'
 import { Input } from './engine/input'
 import { GameLoop } from './engine/loop'

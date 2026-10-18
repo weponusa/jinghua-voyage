@@ -7,6 +7,7 @@ import { CHAPTERS } from '../game/story'
 import type { NavigationSnapshot } from '../game/navigation'
 import type { VoyageUi } from '../game/voyage'
 import { LocalMapRenderer } from './local-map'
+import { renderSeaChart } from './sea-chart'
 
 export type Screen = 'boot' | 'title' | 'hud' | 'pause' | 'settings'
 
@@ -228,14 +229,6 @@ export class Ui implements VoyageUi {
     const el = this.q('.chart')
     const p = this.save.data.progress
     let selected: ChapterId = nextChapter(p) ?? 'junzi'
-    const ports = CHAPTER_ORDER.map(id => {
-      const m = CHAPTERS[id]
-      const state = isCompleted(p, id) ? 'done' : isUnlocked(p, id) ? 'open' : isPlayable(id) ? 'locked' : 'soon'
-      return `<button class="port is-${state}" data-port="${id}" style="left:${m.chart.x}%;top:${m.chart.y}%" aria-label="${m.name}，${state === 'soon' ? '制作中，可查看介绍' : state === 'locked' ? '待解锁，可查看介绍' : state === 'done' ? '已完成，可重游' : '已开放'}">
-        <i class="port-dot">${state === 'done' ? FLOWER_SVG : ''}</i><span class="port-name">${m.name}</span><small class="port-state">${state === 'done' ? '已完成' : state === 'open' ? '已开放' : state === 'soon' ? '制作中' : '待解锁'}</small></button>`
-    }).join('')
-    const route = CHAPTER_ORDER.map(id => `${CHAPTERS[id].chart.x},${CHAPTERS[id].chart.y}`).join(' ')
-    this.q('.chart-sea').innerHTML = `<svg class="chart-route" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="8,86 ${route}" /></svg>${ports}`
     const detail = () => {
       const m = CHAPTERS[selected]
       const locked = !isUnlocked(p, selected)
@@ -248,14 +241,17 @@ export class Ui implements VoyageUi {
         ${isCompleted(p, selected) ? `<p class="cd-moral">所悟：${m.moral}</p>` : ''}
         <p class="cd-build-note">${!playable ? '此国故事仍在制作，现可阅览介绍，暂不能启航。' : locked ? '完成前序章节后方可启航。' : '本作当前仅开放第一章。'}</p>
         <button class="btn primary" data-action="sail" ${locked || !playable ? 'disabled' : ''}><span>${!playable ? '暂不可启航 · 制作中' : locked ? '尚未解锁' : isCompleted(p, selected) ? '重游此国' : '扬帆启航'}</span></button>`
+      this.q('.chart-sea').innerHTML = renderSeaChart(p, selected)
       for (const b of this.qa<HTMLElement>('.port')) b.classList.toggle('is-selected', b.dataset.port === selected)
     }
     detail()
     el.classList.add('is-active')
+    this.root.classList.add('is-map-open')
     return new Promise<ChapterId | null>(resolve => {
       this.overlayResolve = v => {
         if (v === 'select') return
         el.classList.remove('is-active')
+        this.root.classList.remove('is-map-open')
         this.overlayResolve = null
         resolve((v as ChapterId | null) ?? null)
       }
@@ -333,6 +329,7 @@ export class Ui implements VoyageUi {
   refreshSettings(): void {
     const d = this.save.data
     const modelStyle = (d as SaveData & { modelStyle?: 'detailed' | 'chibi' }).modelStyle ?? 'detailed'
+    this.root.classList.toggle('is-reduced-motion', d.reducedMotion)
     const set = (name: string, v: number) => {
       const el = this.root.querySelector<HTMLInputElement>(`input[name="${name}"]`)
       if (el) el.value = String(v)
