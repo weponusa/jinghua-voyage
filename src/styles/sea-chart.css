@@ -420,11 +420,13 @@ body.is-reduced-motion .chart .chart-paper { animation: none; }
   .chart .chart-paper > header .icon-btn { grid-column: 2; grid-row: 1 / span 2; }
   .chart .chart-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(164px, .64fr); }
   .chart .chart-sea { margin: 9px 9px 0; }
-  .chart .sea-chart-canvas { min-height: 524px; height: 524px; }
-  .chart .sea-chart-ports { inset: 47px 13px 35px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(106px, 1fr)); gap: 11px 12px; }
+  .chart .sea-chart-canvas { min-height: 0; height: auto; }
+  .chart .sea-chart-ports { position: relative; inset: auto; padding: 47px 13px 44px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; gap: 18px 14px; }
   .chart .port,
   .chart .port:nth-child(5) { grid-column: auto; }
-  .chart .port-visual { min-height: 74px; }
+  .chart .port { grid-template-rows: auto auto; }
+  .chart .port-visual { min-height: 0; width: 100%; height: auto; aspect-ratio: 1.12; }
+  .chart .island-portrait { object-fit: contain; }
   .chart .port-name { font-size: 13px; }
   .chart .chart-detail { min-height: 0; padding: 11px 14px 13px; border-top: 1px dashed rgba(93, 103, 75, .42); border-left: 0; }
   .chart .chart-detail::before { top: 11px; right: 11px; font-size: 24px; }

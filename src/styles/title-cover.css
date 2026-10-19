@@ -1,0 +1,26 @@
+/* Generated key art includes the actual 镜花缘 wordmark. Menu remains native DOM. */
+#ui .title.has-key-art { isolation: isolate; justify-content: flex-end; align-items: flex-end; background: #244d52; }
+#ui .title.has-key-art .title-cover { position: absolute; inset: 0; z-index: -2; display: block; pointer-events: none; }
+#ui .title.has-key-art .title-cover img { width: 100%; height: 100%; display: block; object-fit: cover; }
+#ui .title.has-key-art::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(0deg, rgba(15,40,41,.28), transparent 45%); }
+#ui .title.has-key-art .title-col { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); pointer-events: none; }
+#ui .title.has-key-art .title-menu { width: min(340px, 38vw); background: rgba(247,240,221,.94); backdrop-filter: blur(10px); border: 1px solid rgba(238,222,176,.8); border-top: 4px solid var(--malachite); border-radius: 9px; padding: 20px; gap: 8px; box-shadow: 0 14px 44px rgba(17,49,50,.28); }
+#ui .title.has-key-art .tagline { font-size: 13px; line-height: 1.65; }
+#ui .title.has-key-art .title-status { font-size: 12px; line-height: 1.5; }
+@media (orientation: portrait) {
+  #ui .title.has-key-art { flex-direction: column; justify-content: flex-end; align-items: center; padding: calc(12px + var(--safe-t)) calc(16px + var(--safe-l)) calc(18px + var(--safe-b)) calc(16px + var(--safe-r)); }
+  #ui .title.has-key-art .title-menu { width: 100%; max-width: 400px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  #ui .title.has-key-art .tagline { display: none; }
+  #ui .title.has-key-art [data-action="start"], #ui .title.has-key-art .title-status, #ui .title.has-key-art .title-credit { grid-column: 1 / -1; }
+  #ui .title.has-key-art .btn { min-height: 40px; padding: 0 8px; font-size: 13px; letter-spacing: .06em; }
+  #ui .title.has-key-art .btn.primary { min-height: 45px; font-size: 17px; }
+  #ui .title.has-key-art .title-status { margin: 2px 0 0; font-size: 11px; }
+  #ui .title.has-key-art .title-credit { font-size: 11px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #ui .title.has-key-art { padding: 12px 20px; }
+  #ui .title.has-key-art .title-menu { width: min(310px, 40vw); padding: 12px; gap: 6px; }
+  #ui .title.has-key-art .tagline { display: none; }
+  #ui .title.has-key-art .btn { min-height: 38px; font-size: 14px; }
+  #ui .title.has-key-art .title-status, #ui .title.has-key-art .title-credit { font-size: 11px; }
+}

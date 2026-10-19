@@ -385,6 +385,13 @@
       "assetType": "model",
       "groupId": "island-scenery"
     },
+    "assets/share/cover-jinghua-20261019.png": {
+      "path": "/manus-storage/game/sha256/122b22aebba07d575bb5c25066ad0ea399e9b2899866ce116f2185dbec40edaa.png",
+      "sha256": "sha256:122b22aebba07d575bb5c25066ad0ea399e9b2899866ce116f2185dbec40edaa",
+      "size": 1563628,
+      "assetType": "image",
+      "groupId": "share"
+    },
     "assets/share/favicon.png": {
       "path": "/manus-storage/game/sha256/dea8aa73c7e9918a4a91716de424713af27ab78f0e4e1c7e71bd35cb10cc8a7b.png",
       "sha256": "sha256:dea8aa73c7e9918a4a91716de424713af27ab78f0e4e1c7e71bd35cb10cc8a7b",
@@ -405,6 +412,13 @@
       "size": 2055169,
       "assetType": "image",
       "groupId": "presentation"
+    },
+    "assets/share/title-jinghua-20261019.png": {
+      "path": "/manus-storage/game/sha256/d8fb084da33e710d7a9927b650f36ab04c7218f726f1eddbf7560a85db1503b0.png",
+      "sha256": "sha256:d8fb084da33e710d7a9927b650f36ab04c7218f726f1eddbf7560a85db1503b0",
+      "size": 1851966,
+      "assetType": "image",
+      "groupId": "share"
     }
   }
 }

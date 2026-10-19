@@ -1,5 +1,7 @@
 import './styles/jinghua.css'
 import './styles/sea-chart.css'
+import './styles/local-map.css'
+import './styles/title-cover.css'
 import { Audio } from './engine/audio'
 import { Input } from './engine/input'
 import { GameLoop } from './engine/loop'

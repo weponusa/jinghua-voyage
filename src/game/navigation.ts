@@ -4,6 +4,8 @@ export type SceneMap = {
   id: string; title: string
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
   coast: MapPoint[]; paths: MapPoint[][]; landmarks: Landmark[]
+  /** North-up image rendered from this scene; optional when WebGL capture is unavailable. */
+  illustration?: string
 }
 export type NavigationSnapshot = {
   map: SceneMap

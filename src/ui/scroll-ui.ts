@@ -9,6 +9,8 @@ import type { VoyageUi } from '../game/voyage'
 import { LocalMapRenderer } from './local-map'
 import { renderSeaChart } from './sea-chart'
 import type { IslandPortraits } from './island-portraits'
+import titleCover from '../../assets/share/cover-jinghua-20261019.png?url'
+import portraitCover from '../../assets/share/title-jinghua-20261019.png?url'
 
 export type Screen = 'boot' | 'title' | 'hud' | 'pause' | 'settings'
 
@@ -545,7 +547,8 @@ export class Ui implements VoyageUi {
   <p class="boot-tip">展卷中……</p>
 </section>
 
-<section class="screen title" data-screen="title">
+<section class="screen title has-key-art" data-screen="title">
+  <picture class="title-cover"><source media="(orientation: portrait)" srcset="${portraitCover}"/><img src="${titleCover}" alt="镜花缘 · 第一章君子国"/></picture>
   <div class="title-col">
     <h1 class="logo-text">镜花缘</h1>
     <div class="title-seal">海外奇游</div>

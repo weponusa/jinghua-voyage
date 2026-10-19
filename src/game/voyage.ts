@@ -10,6 +10,7 @@ import { hub } from './chapters/hub'
 import { junzi } from './chapters/junzi'
 import { instance, preload, setModelStyle } from './models'
 import { disposeScene } from './dispose'
+import { createMapIllustration } from './map-illustration'
 import { JUNZI_MAP, distanceTo, type NavigationSnapshot, type SceneMap } from './navigation'
 import { Npc, type NpcSpec } from './npc'
 import { Player, type PlayerEvent } from './player'
@@ -223,6 +224,7 @@ export class Voyage {
     try {
       await def.build(a.ctx)
       a.map = this.makeMap(a)
+      if (def.id === 'junzi') a.map.illustration = createMapIllustration(stage.scene, a.map, [player.root, player.shadowMesh, marker, guide, ...a.npcs.map(npc => npc.root), ...(a.flower ? [a.flower] : [])])
       // Spawn on the ground (or wherever the chapter asked), never inside it.
       a.spawn ??= def.spawn.clone().setY(stage.groundHeight(def.spawn.x, def.spawn.z) + 0.9)
       player.teleport(a.spawn.clone())
