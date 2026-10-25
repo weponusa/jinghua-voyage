@@ -1,7 +1,7 @@
 /* 镜花缘·海外奇游 — handscroll UI over the canvas. Bundled CC0 CJK font only. */
 @font-face {
   font-family: 'ManusCC0 Sans CJK SC';
-  src: url('/fonts/jinghua-subset.woff2') format('woff2');
+  src: url('../../public/fonts/jinghua-subset.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
 }

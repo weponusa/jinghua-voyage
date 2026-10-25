@@ -10,8 +10,8 @@ export const distanceLabel = (distance: number): string => {
 type MapRole = 'mini' | 'local'
 
 const PAINTED_MAPS = new Set(['hub', 'junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai'])
-export const paintedMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `/interface/map-${id}.webp` : null
-export const miniMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `/interface/mini-${id}.webp` : null
+export const paintedMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `./interface/map-${id}.webp` : null
+export const miniMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `./interface/mini-${id}.webp` : null
 
 /**
  * Renders the chapter map from coordinates supplied by NavigationSnapshot. Terrain lines and

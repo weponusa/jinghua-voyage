@@ -109,7 +109,7 @@ export class ScoreConductor {
         channel.pan.value = STEREO[key]
         channel.connect(this.bus)
         const instrument = await Soundfont.instrument(this.ctx, FILES[key], {
-          nameToUrl: name => `/audio/soundfonts/${name}-mp3.json`,
+          nameToUrl: name => `./audio/soundfonts/${name}-mp3.json`,
           destination: channel,
           notes: notes(from, to),
           attack: key === 'strings' || key === 'choir' ? 0.025 : 0.004,

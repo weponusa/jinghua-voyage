@@ -20,10 +20,10 @@ describe('sea chart group portrait', () => {
   it('uses the painted chart and local artwork for every island without browser-rendered portraits', () => {
     const html = renderSeaChart(emptyProgress(), 'junzi')
 
-    expect(html).toContain('class="sea-chart-art" src="/interface/sea-chart.webp"')
+    expect(html).toContain('class="sea-chart-art" src="./interface/sea-chart.webp"')
     expect(html).toContain('port--junzi is-open is-selected has-portrait')
     for (const id of ['junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai']) {
-      expect(html).toContain(`class="island-portrait" src="/interface/map-${id}.webp"`)
+      expect(html).toContain(`class="island-portrait" src="./interface/map-${id}.webp"`)
     }
     expect(html).not.toContain('data:image')
     expect(html).not.toContain('island-placeholder')
