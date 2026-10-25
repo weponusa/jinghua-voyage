@@ -2,7 +2,7 @@ import type { Audio } from '../engine/audio'
 import type { Input } from '../engine/input'
 import type { Quality, SaveData, SaveStore } from '../engine/save'
 import type { Line } from '../game/chapter'
-import { CHAPTER_ORDER, KINGDOMS, TEST_ALL_CHAPTERS, isCompleted, isPlayable, isUnlocked, nextChapter, type ChapterId } from '../game/progress'
+import { KINGDOMS, TEST_ALL_CHAPTERS, flowerCount, isCompleted, isPlayable, isUnlocked, nextChapter, type ChapterId } from '../game/progress'
 import { CHAPTERS } from '../game/story'
 import type { NavigationSnapshot } from '../game/navigation'
 import type { VoyageUi } from '../game/voyage'
@@ -100,12 +100,12 @@ export class Ui implements VoyageUi {
     this.q('[data-action="start"] span').textContent = started ? '继续航程' : '扬帆启程'
     const next = nextChapter(p)
     if (TEST_ALL_CHAPTERS) {
-      this.q('.title-status').textContent = '测试模式 · 六枚镜花 · 七章全部开放 · 独立测试存档'
+      this.q('.title-status').textContent = '测试模式 · 六枚镜花 · 十章全部开放 · 独立测试存档'
       return
     }
     this.q('.title-status').textContent = started
-      ? next ? `已收镜花 ${p.completed.filter(id => id !== 'penglai').length}/6 · 下一站 ${CHAPTERS[next].name} · 进度自动保存` : '七章已圆满 · 可展开航海图随时重游'
-      : '七章完整航程 · 从君子国扬帆启程 · 进度自动保存'
+      ? next ? `已收镜花 ${flowerCount(p)}/6 · 下一站 ${CHAPTERS[next].name} · 进度自动保存` : '百花航海篇已圆满 · 可展开航海图随时重游'
+      : '百花航海篇 · 九国与仙山 · 从君子国扬帆启程'
   }
 
   // ─── HUD ────────────────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ export class Ui implements VoyageUi {
 
   flowers(n: number, flash = false): void {
     const el = this.q('.flowers')
-    el.innerHTML = KINGDOMS.map((_, i) => `<i class="${i < n ? 'got' : ''}">${FLOWER_SVG}</i>`).join('') + `<b>${n}/6</b>`
+    el.innerHTML = KINGDOMS.map((_, i) => `<i class="${i < n ? 'got' : ''}">${FLOWER_SVG}</i>`).join('') + `<b>${n}/${KINGDOMS.length}</b>`
     if (flash) {
       el.classList.remove('flash')
       void el.offsetWidth
@@ -306,13 +306,14 @@ export class Ui implements VoyageUi {
   seal(id: ChapterId, firstTime: boolean): Promise<void> {
     const m = CHAPTERS[id]
     const el = this.q('.seal')
+    const next = firstTime ? nextChapter(this.save.data.progress) : null
+    const flower = m.kind === 'flower'
     this.q('.seal-body').innerHTML = `
-      <div class="stamp"><span>${m.name.slice(0, 2)}</span><span>镜花</span></div>
-      <h2>${firstTime ? '得镜花一枚' : '重游已毕'}</h2>
+      <div class="stamp"><span>${m.name.slice(0, 2)}</span><span>${flower ? '镜花' : '游记'}</span></div>
+      <h2>${firstTime ? flower ? '得镜花一枚' : '人物见闻已录' : '重游已毕'}</h2>
       <p class="seal-name">${m.name} · ${m.tagline}</p>
       <p class="seal-moral">「${m.moral}」</p>
-      ${firstTime && id !== 'heichi' ? `<p class="seal-next">新港口已在航海图上标出：${CHAPTERS[CHAPTER_ORDER[CHAPTER_ORDER.indexOf(id) + 1]].name}</p>` : ''}
-      ${firstTime && id === 'heichi' ? '<p class="seal-next">六枚镜花已齐，海上仙山小蓬莱现于航海图。</p>' : ''}
+      ${next ? `<p class="seal-next">下一程已在航海图上标出：${CHAPTERS[next].name}</p>` : ''}
       <button class="btn primary" data-action="overlay-ok"><span>返回海船</span></button>`
     el.classList.add('is-active')
     this.audio.play('seal')
@@ -325,9 +326,13 @@ export class Ui implements VoyageUi {
     })
   }
 
-  ending(): Promise<void> {
+  ending(choice: 'stay' | 'return'): Promise<void> {
     const el = this.q('.ending')
     this.q('.ending-list').innerHTML = KINGDOMS.map(id => `<li><b>${CHAPTERS[id].name}</b><span>${CHAPTERS[id].moral}</span></li>`).join('')
+    this.q('.ending-choice').textContent = choice === 'stay' ? '唐敖题诗入山，林之洋与多九公带着书信归乡。' : '唐敖选择归乡，与同行人一起回到唐小山身边。'
+    this.q('.ending-epilogue').innerHTML = choice === 'stay'
+      ? '<b>尾声 · 唐小山</b><br/>后来，唐小山读到父亲留下的书信和航海志，决意循着海路寻找父亲。她将开启另一段百花故事。'
+      : '<b>尾声 · 唐小山</b><br/>码头重逢后，唐小山接过父亲的航海志。那些人物与花信，仍引着她走向自己的远行。'
     el.classList.add('is-active')
     return new Promise(resolve => {
       this.overlayResolve = () => {
@@ -526,7 +531,7 @@ export class Ui implements VoyageUi {
   <div class="loading-shade"></div>
   <div class="boot-content">
     <div class="loading-seal"><span>镜</span></div>
-    <p class="loading-kicker">海外奇游 · 七章画卷</p>
+    <p class="loading-kicker">百花航海篇 · 十章画卷</p>
     <div class="wave-mark">${WAVE_MARK_SVG}</div>
     <p class="boot-title">镜花缘</p>
     <div class="boot-bar"><i></i></div>
@@ -541,7 +546,7 @@ export class Ui implements VoyageUi {
     <div class="title-seal">海外奇游</div>
   </div>
   <div class="title-menu">
-    <p class="tagline">随唐敖泛海远游，历六国风物，登小蓬莱仙境。<br/>七章完整航程，沿途见闻与进度自动保存。</p>
+    <p class="tagline">随唐敖泛海远游，历九国风物，录百花因缘。<br/>十章完整航程，三段人物新篇，沿途见闻自动保存。</p>
     <button class="btn primary" data-action="start"><span>扬帆启程</span></button>
     <button class="btn" data-action="chart-title"><span>航海图 · 选章</span></button>
     <button class="btn" data-action="settings"><span>设置</span></button>
@@ -628,7 +633,9 @@ export class Ui implements VoyageUi {
     <h2>镜花水月</h2>
     <p class="ending-lead">海外一程，六国六悟：</p>
     <ul class="ending-list"></ul>
-    <p class="ending-last">镜中之花，水中之月。所见所历，皆在一心。<br/>—— 全剧终 ——</p>
+    <p class="ending-choice"></p>
+    <p class="ending-epilogue"></p>
+    <p class="ending-last">镜中之花，水中之月。所见所历，皆在一心。<br/>—— 百花航海篇 · 终 ——</p>
     <button class="btn primary" data-action="overlay-ok"><span>回到海船</span></button>
   </div>
 </div>

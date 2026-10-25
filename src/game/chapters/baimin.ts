@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { NAMES, dockAndReturn, duoSpec, type SceneDef } from '../chapter'
+import { NAMES, dockAndReturn, duoSpec, linSpec, type SceneDef } from '../chapter'
 import { CHAPTERS } from '../story'
 import { textTexture, villager } from '../stage'
 import { addRegionalBanners, addRegionalCrown } from '../regional-architecture'
@@ -20,7 +20,7 @@ const ROUNDS = [
 export const baimin: SceneDef = {
   id: 'baimin',
   palette: M.palette,
-  models: ['duojiugong', 'scholar', 'child', 'academy_hall', 'desk_books', 'scholar_oak', 'flower_yellowA', 'stone_largeB', 'canoe', 'grass', 'stump_round'],
+  models: ['duojiugong', 'linzhiyang', 'scholar', 'child', 'academy_hall', 'desk_books', 'scholar_oak', 'flower_yellowA', 'stone_largeB', 'canoe', 'grass', 'stump_round'],
   spawn: new THREE.Vector3(0, 1.2, 13),
   yaw: 0,
   async build(ctx) {
@@ -134,6 +134,20 @@ export const baimin: SceneDef = {
       else if (pages.size < 3) ctx.objective(`在岛上寻找被风吹散的书页（${pages.size}/3）`, null)
       else ctx.objective('拿着书页，回书院与塾师对证', teacher.root)
     }
+    const lin = await ctx.npc(linSpec(4.2, 10.2, Math.PI * 0.8))
+    ctx.interact({
+      pos: lin.position, radius: 2.4, verb: '同游美馆', name: NAMES.lin, enabled: () => true,
+      run: () => ctx.say([
+        { who: NAMES.tang, text: '林兄，进了学馆只说我是做买卖的，别提从前的功名。' },
+        { who: '塾师', text: '看两位满身风尘，可也读过诗？' },
+        { who: NAMES.tang, text: '小可贩货为生，只胡乱念过几句。' },
+        { who: NAMES.lin, text: '妹夫，你这个探花，装商贾倒装得挺像。' },
+        { who: '塾师', text: '原来是探花！失敬失敬。这馆舍花木正好，请留一句诗。' },
+        { who: NAMES.tang, text: '花靠春风开得好，书凭一字一句真。' },
+        { who: '塾师', text: '好是好，只是这个「真」字，听着像在点我。' },
+        { who: NAMES.lin, text: '他不好意思点，我敢。先生，念书跟做买卖一样，货色得真，字也得真。' },
+      ]),
+    })
     const duo = await ctx.npc(duoSpec(2.2, 12, Math.PI))
     ctx.interact({
       pos: duo.position, radius: 2.4, verb: '交谈', name: NAMES.duo, enabled: () => true,

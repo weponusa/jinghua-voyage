@@ -15,7 +15,7 @@ let browser, current
 const errors = []
 const assert = (ok, message) => { if (!ok) throw new Error(message) }
 const wait = ms => new Promise(r => setTimeout(r, ms))
-const guard = setTimeout(() => { console.error('smoke: timeout'); server?.kill(); process.exit(1) }, 240_000)
+const guard = setTimeout(() => { console.error('smoke: timeout'); server?.kill(); process.exit(1) }, 420_000)
 const get = page => page.evaluate(() => window.__game.voyage.debug())
 async function open(context) {
   const page = await context.newPage(); current = page
@@ -45,10 +45,10 @@ async function advance(page) {
 async function sail(page, junziCompleted = false) {
   await page.click('[data-action="pause-chart"]')
   await page.waitForSelector('.chart.is-active')
-  assert(await page.locator('.chart-sea .port').count() === 7, 'sea chart must preserve seven kingdom anchors')
+  assert(await page.locator('.chart-sea .port').count() === 10, 'sea chart must preserve ten chapter anchors')
   await page.waitForFunction(() => {
     const images = [...document.querySelectorAll('.chart-sea .port.has-portrait img.island-portrait')]
-    return images.length === 7 && images.every(image => image.complete && image.naturalWidth >= 300)
+    return images.length === 10 && images.every(image => image.complete && image.naturalWidth >= 300)
   }, undefined, { timeout: 60000 })
   assert(await page.evaluate(() => { const sea = document.querySelector('.chart-sea'); return sea.scrollWidth <= sea.clientWidth + 2 }), 'map must not require horizontal scrolling')
   assert(await page.locator('.chart-sea .port-visual').evaluateAll(nodes => nodes.every(node => node.getBoundingClientRect().height >= 60)), 'island portraits must not collapse into horizontal strips')
@@ -115,17 +115,21 @@ try {
     for (const view of [{width:1280,height:800}, {width:844,height:390}, {width:390,height:844}]) {
       const touch = view.width < 1000
       const context = await browser.newContext({viewport:view,isMobile:touch,hasTouch:touch,deviceScaleFactor:touch ? 2 : 1})
+      // Atlas-only layout checks start after the prologue; fresh saves intentionally play it first.
+      await context.addInitScript(() => {
+        localStorage.setItem('jinghua.save', JSON.stringify({ version: 2, progress: { prologueSeen: true, prologueAct: 3 } }))
+      })
       const page = await open(context)
       await page.click('[data-action="chart-title"]')
       await page.waitForSelector('.chart.is-active')
       await page.waitForFunction(() => {
         const images = [...document.querySelectorAll('.chart-sea .port.has-portrait img.island-portrait')]
-        return images.length === 7 && images.every(image => image.complete && image.naturalWidth >= 300)
+        return images.length === 10 && images.every(image => image.complete && image.naturalWidth >= 300)
       }, undefined, {timeout:60000})
       assert(await page.locator('.chart-sea .port-visual').evaluateAll(nodes => nodes.every(node => node.getBoundingClientRect().height >= 60)), 'island portrait height collapsed')
       assert(await page.evaluate(() => { const sea=document.querySelector('.chart-sea');return sea.scrollWidth<=sea.clientWidth+2 }), 'atlas has horizontal overflow')
       await screenshot(page, `atlas-final-${view.width}x${view.height}`)
-      for (const id of ['junzi','daren','liangmian','wuchang','baimin','heichi','penglai']) {
+      for (const id of ['junzi','daren','wuchang','heichi','baimin','shushi','liangmian','qishe','nver','penglai']) {
         await page.locator(`[data-port="${id}"]`).scrollIntoViewIfNeeded()
         if (touch) await page.tap(`[data-port="${id}"]`); else await page.click(`[data-port="${id}"]`)
         assert(await page.locator('[data-action="sail"]').isDisabled() === (id !== 'junzi'), `invalid sail state for ${id}`)
@@ -142,7 +146,7 @@ try {
       await context.close()
     }
     assert(errors.length===0, `atlas browser errors:\n${errors.join('\n')}`)
-    console.log('smoke: atlas OK — real portraits, seven selectable countries, detail width, native close and desktop/mobile layouts')
+    console.log('smoke: atlas OK — real portraits, ten selectable chapters, detail width, native close and desktop/mobile layouts')
   } else {
   if (!process.env.MOBILE_ONLY) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'en-US' })
@@ -209,6 +213,8 @@ try {
   assert((await page.locator('.seal-next').textContent()).includes('大人国'), 'completion should unlock the second chapter')
   await screenshot(page, '07-chapter-complete')
   await page.click('[data-action="overlay-ok"]')
+  // New sea events may begin as soon as the seal closes; advance them with real dialogue input.
+  await advance(page)
   await page.waitForFunction(() => window.__game.voyage.sceneId === 'hub' && window.__game.voyage.mode === 'explore')
   assert((await page.evaluate(() => window.__game.save.data.progress.completed)).join(',') === 'junzi', 'chapter not completed exactly once')
   await sail(page, true)

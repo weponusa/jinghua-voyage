@@ -7,7 +7,7 @@ import { TEST_ALL_CHAPTERS, emptyProgress, parseProgress, type Progress } from '
 export type Quality = 'low' | 'medium' | 'high'
 
 export type SaveData = {
-  version: 1
+  version: 2
   musicVolume: number
   sfxVolume: number
   muted: boolean
@@ -23,7 +23,7 @@ export const SAVE_KEY = TEST_ALL_CHAPTERS ? 'jinghua.save.test' : 'jinghua.save'
 
 export function defaultSave(): SaveData {
   return {
-    version: 1,
+    version: 2,
     musicVolume: 0.6,
     sfxVolume: 0.8,
     muted: false,
@@ -49,9 +49,10 @@ export function parseSave(raw: string | null): SaveData {
   } catch {
     return base
   }
-  if (data.version !== 1) return base
+  if (data.version !== 1 && data.version !== 2) return base
+  const legacy = data.version === 1
   return {
-    version: 1,
+    version: 2,
     musicVolume: clamp01(data.musicVolume, base.musicVolume),
     sfxVolume: clamp01(data.sfxVolume, base.sfxVolume),
     muted: data.muted === true,
@@ -59,7 +60,7 @@ export function parseSave(raw: string | null): SaveData {
     invertY: data.invertY === true,
     quality: data.quality === 'low' || data.quality === 'medium' || data.quality === 'high' ? data.quality : base.quality,
     reducedMotion: data.reducedMotion === true,
-    progress: parseProgress(data.progress),
+    progress: parseProgress(data.progress, legacy ? 'legacy' : undefined),
   }
 }
 

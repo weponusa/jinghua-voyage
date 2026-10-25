@@ -3,13 +3,13 @@ import { emptyProgress } from '../src/game/progress'
 import { getPortState, renderSeaChart } from '../src/ui/sea-chart'
 
 describe('sea chart group portrait', () => {
-  it('keeps seven selectable country buttons in chapter order with honest states', () => {
+  it('keeps ten selectable ports in chapter order with honest states', () => {
     const progress = emptyProgress()
     const html = renderSeaChart(progress, 'junzi')
 
-    expect((html.match(/<button class="port /g) ?? []).length).toBe(7)
+    expect((html.match(/<button class="port /g) ?? []).length).toBe(10)
     expect(html).toMatch(/port--junzi is-open is-selected has-portrait" data-port="junzi"[^>]*aria-pressed="true"/)
-    for (const id of ['daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai']) {
+    for (const id of ['daren', 'wuchang', 'heichi', 'baimin', 'shushi', 'liangmian', 'qishe', 'nver', 'penglai']) {
       expect(html).toMatch(new RegExp(`port--${id} is-locked has-portrait" data-port="${id}"`))
     }
     expect(html).toContain('待解锁。查看国家介绍')
@@ -22,7 +22,7 @@ describe('sea chart group portrait', () => {
 
     expect(html).toContain('class="sea-chart-art" src="./interface/sea-chart.webp"')
     expect(html).toContain('port--junzi is-open is-selected has-portrait')
-    for (const id of ['junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai']) {
+    for (const id of ['junzi', 'daren', 'wuchang', 'heichi', 'baimin', 'shushi', 'liangmian', 'qishe', 'nver', 'penglai']) {
       expect(html).toContain(`class="island-portrait" src="./interface/map-${id}.webp"`)
     }
     expect(html).not.toContain('data:image')

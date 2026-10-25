@@ -134,6 +134,18 @@ export const heichi: SceneDef = {
       run: () => ctx.say([{ who: '卢紫萱', text: '学问不分男女，也不看黑白。愿客人一路顺风。' }]),
     })
 
+    ctx.interact({
+      pos: new THREE.Vector3(-9, 0, 3.6), radius: 2.3, verb: '听论学', name: '碑廊论学', enabled: () => true,
+      run: () => ctx.say([
+        { who: '黎红薇', text: '多老先生，押韵不能只看两个字听着像不像，得先把字音读准。' },
+        { who: '卢紫萱', text: '我倒觉得，也不能拿自己的口音硬套古韵。哪里相同，哪里不同，要讲出凭据。' },
+        { who: '黎红薇', text: '经书也一样。「学而时习之」的「习」，我以为是常常去做，不只是把书背熟。' },
+        { who: '卢紫萱', text: '我补一句：做过还要回头想想。不然手脚熟了，道理未必真懂。' },
+        { who: NAMES.duo, text: '老夫原想考你们，如今倒受了教。旧注可以读，自己的脑子也不能闲着。' },
+        { who: '黎红薇', text: '老先生肯放下旧见，听我们两个晚辈说完，也不容易。' },
+      ]),
+    })
+
     const plan = () => {
       if (solved) return
       if (!accepted) ctx.objective('去女学塾拜访才女', hong.root)

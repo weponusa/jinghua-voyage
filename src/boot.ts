@@ -64,6 +64,11 @@ async function boot(): Promise<void> {
       audio.unlock()
       audio.startMusic()
       ui.show('hud')
+      const p = save.data.progress
+      if (!p.prologueSeen && p.completed.length === 0) {
+        void voyage.enter('hub')
+        return
+      }
       void voyage.openChart().then(sailed => {
         if (!sailed) ui.show('title')
       })

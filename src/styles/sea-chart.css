@@ -209,13 +209,13 @@
 .chart .sea-chart-status-mark.is-open { background: #37ad94; box-shadow: 0 0 0 2px rgba(200, 154, 66, .58); }
 .chart .sea-chart-status-mark.is-done { background: var(--chart-gold); }
 
-/* Four islands above three: every item remains a real, full-card HTML button. */
+/* Five ports above five: six flower chapters, three story chapters and the finale. */
 .chart .sea-chart-ports {
   position: absolute;
   z-index: 2;
   inset: 48px 18px 35px;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-template-rows: repeat(2, auto);
   align-content: center;
   gap: 13px 10px;
@@ -224,7 +224,7 @@
 .chart .port {
   position: relative;
   inset: auto;
-  grid-column: span 2;
+  grid-column: span 1;
   width: 100%;
   min-width: 44px;
   min-height: 44px;
@@ -249,7 +249,7 @@
   -webkit-tap-highlight-color: transparent;
   transition: filter .16s ease, opacity .16s ease;
 }
-.chart .port:nth-child(5) { grid-column: 2 / span 2; }
+.chart .port[data-kind="story"] .port-visual { border-style: dashed; }
 .chart .port::before,
 .chart .port::after { content: none; }
 .chart .port-pin,

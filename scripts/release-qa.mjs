@@ -34,10 +34,10 @@ try {
     cover: document.querySelector('.title-cover img')?.currentSrc ?? '',
     status: document.querySelector('.title-status')?.textContent ?? '',
   }))
-  assert(desktop.description.includes('七章完整航程'))
+  assert(desktop.description.includes('十章完整航程'))
   assert(!desktop.description.includes('第一章'))
   assert(desktop.cover.includes('cover-jinghua-full'))
-  assert(desktop.status.includes('七章完整航程'))
+  assert(desktop.status.includes('百花航海篇'))
   report.covers.desktop = desktop
   await page.screenshot({ path: `${out}/title-desktop.png` })
 

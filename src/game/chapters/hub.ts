@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { NAMES, duoSpec, linSpec, type Ctx, type SceneDef } from '../chapter'
 import { CHAPTERS, HUB_PALETTE } from '../story'
-import { flowerCount, nextChapter } from '../progress'
+import { CHAPTER_ORDER, flowerCount, nextChapter, type ChapterId } from '../progress'
 import { instance } from '../models'
 import { lantern, mirrorFlower, textTexture } from '../stage'
 import { WATER_Y } from '../terrain'
@@ -95,7 +95,7 @@ function chartTable(): THREE.Group {
     for (let x = 0; x <= 512; x += 16) k.lineTo(x, 30 + i * 32 + Math.sin(x * 0.05 + i) * 4)
     k.stroke()
   }
-  const isles = [[70, 230], [150, 120], [235, 210], [300, 90], [370, 200], [430, 110], [470, 250]]
+  const isles = CHAPTER_ORDER.map(id => [CHAPTERS[id].chart.x / 100 * 512, CHAPTERS[id].chart.y / 100 * 320])
   k.fillStyle = '#7fae8e'
   for (const [x, y] of isles) {
     k.beginPath()
@@ -121,6 +121,48 @@ function chartTable(): THREE.Group {
   g.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true } })
   return g
 }
+
+const PROLOGUE_ACTS = [
+  [
+    { who: NAMES.narrator, text: '第一幕 · 百花谪凡。武则天寒冬敕令百花齐放，百花仙子与众花仙却因错乱花时，获谴降入红尘。' },
+    { who: NAMES.narrator, text: '岭南唐家，一声婴啼。百花仙子托生为唐敖之女，取名唐小山。此事只有看卷人知道，唐敖并不知晓。' },
+    { who: '唐小山', text: '爹爹，外面的世界，也有书里这些山川和花鸟么？' },
+    { who: NAMES.tang, text: '等你长大了，爹爹把见过的都讲给你听。' },
+  ],
+  [
+    { who: NAMES.narrator, text: '第二幕 · 探花失意。唐敖赴京得中探花，报喜声犹在耳边，因旧交受牵连的参劾却随后而至。' },
+    { who: NAMES.narrator, text: '功名被革，他把文书收进箱底。林之洋正要领商船出海，邀他同行散心，掌舵的正是熟识海外风物的多九公。' },
+    { who: NAMES.lin, text: '妹夫，功名丢了，日子还得过。随俺去海外走一趟，看看天到底有多大。' },
+  ],
+  [
+    { who: NAMES.narrator, text: '第三幕 · 梦神观。唐敖夜求仙缘，梦中只闻一句：仙道不离忠孝仁信，下山先学做人。' },
+    { who: NAMES.duo, text: '船已离岸。俺们以贩货为业，走到哪国便看哪国，别先把别人的好坏想定了。' },
+    { who: NAMES.tang, text: '我本只想躲开失意。既然来了，就把每一程都看清楚罢。' },
+    { who: NAMES.narrator, text: '此时无人知道镜花在何处。第一段花信，要等君子国的海风来揭开的。' },
+  ],
+] as const
+
+const SEA_EVENTS: { id: string; after: ChapterId; lines: readonly { who: string; text: string }[] }[] = [
+  { id: 'first-flower-dream', after: 'junzi', lines: [
+    { who: NAMES.narrator, text: '夜航 · 花梦。第一枚镜花在图桌旁发亮，唐敖梦见唐小山站在一片从未见过的花林中。' },
+    { who: '唐小山', text: '爹爹，花落在人间，也会想家么？' },
+    { who: NAMES.tang, text: '小山……原来这一路，还有我不知道的因缘。' },
+  ] },
+  { id: 'home-letter', after: 'daren', lines: [
+    { who: NAMES.narrator, text: '夜航 · 家信。商船托来人捎去一封家书，唐敖写了又改，最后只留下各国真实的见闻。' },
+    { who: NAMES.lin, text: '怎么不把镜花写得神些？' },
+    { who: NAMES.tang, text: '云色照见的是人心。这个比神异更该告诉小山。' },
+  ] },
+  { id: 'duo-humbled', after: 'heichi', lines: [
+    { who: NAMES.duo, text: '老夫走了半生海路，在黑齿国才知，认得几张面孔，算不得认得天下人。' },
+    { who: NAMES.tang, text: '九公肯认错，那两位才女的一课才算没有白讲。' },
+  ] },
+  { id: 'lin-after-nver', after: 'nver', lines: [
+    { who: NAMES.lin, text: '从前只听人说谁该怎样活。自己被困过一回，才知那些话说起来轻巧。' },
+    { who: NAMES.tang, text: '你能自己走出来，俺们也才能在外头接住你。' },
+    { who: NAMES.narrator, text: '当夜，唐敖把女儿国的经过写进留给唐小山的航海志。' },
+  ] },
+]
 
 export const hub: SceneDef = {
   id: 'hub',
@@ -174,12 +216,14 @@ export const hub: SceneDef = {
     ctx.interact({
       pos: lin.position, radius: 2.4, verb: '交谈', name: NAMES.lin, enabled: () => true,
       run: async () => {
-        const n = flowerCount(ctx.progress)
-        const lines = [
-          '妹夫，这趟海外贩货，你只管看风景，买卖交给俺林之洋！',
-          '君子国的镜花安在航海图旁，这一趟从登岸、评理到归舟，算是有始有终。我去把货舱收拾妥当。',
-        ]
-        await ctx.say([{ who: NAMES.lin, text: lines[n >= 1 ? 1 : 0] }])
+        const text = ctx.progress.completed.includes('nver')
+          ? '宫里那笔账，俺如今还记得。账能算清，人受的苦可不能随手抹掉。下一船的货，俺照样做买卖，却不做欺负人的买卖。'
+          : ctx.progress.completed.includes('liangmian')
+            ? '那件绸衫一换，人的脸就跟着变了。俺做买卖讲究货真价实，最烦这种看人下菜碟。'
+            : ctx.progress.completed.includes('junzi')
+              ? '货舱已收拾妥当。你去各国看风物，俺也把各地货单记下来，回去给小山讲讲外面的世道。'
+              : '妹夫，这趟海外贩货，你看风物，俺看行情。别只管前头的奇国，也记得家里还有人等信。'
+        await ctx.say([{ who: NAMES.lin, text }])
       },
     })
     ctx.interact({
@@ -188,8 +232,8 @@ export const hub: SceneDef = {
         const next = nextChapter(ctx.progress)
         if (!next) {
           await ctx.say([
-            { who: NAMES.duo, text: '六国镜花俱已归船，小蓬莱也留下了唐兄的足迹。这一趟海外奇游，总算圆满。' },
-            { who: NAMES.duo, text: '若想重温哪段见闻，只管展开航海图，七处港口随时都能再去走走。' },
+            { who: NAMES.duo, text: '六枚镜花俱已归船，三段人物见闻也已录入航海志。小蓬莱留下了唐兄的足迹，这一趟总算圆满。' },
+            { who: NAMES.duo, text: '若想重温哪段见闻，只管展开航海图，十处港口随时都能再去走走。' },
           ])
           return
         }
@@ -201,16 +245,17 @@ export const hub: SceneDef = {
       },
     })
     const next = nextChapter(ctx.progress)
-    ctx.objective(next ? `到甲板中央展开航海图，前往${CHAPTERS[next].name}` : '海外奇游已圆满 · 可展开航海图重游七处港口', table)
+    ctx.objective(next ? `到甲板中央展开航海图，前往${CHAPTERS[next].name}` : '百花航海篇已圆满 · 可展开航海图重游十处港口', table)
   },
   async start(ctx) {
-    if (ctx.progress.prologueSeen) return
-    await ctx.say([
-      { who: NAMES.narrator, text: '唐朝年间，岭南秀才唐敖赴京赶考，中了探花，却因故被革去功名。' },
-      { who: NAMES.narrator, text: '心灰意冷之际，他随妻舅林之洋的商船出海，想去看一看海外的天地。' },
-      { who: NAMES.lin, text: '妹夫，船已出了港！功名丢了便丢了，海外奇国多得是，够你看个够。' },
-      { who: NAMES.duo, text: '老夫多九公，掌舵四十年。据说每到一国，悟透其中道理，便能得一枚「镜花」。' },
-      { who: NAMES.tang, text: '集齐镜花，便能登上海上仙山小蓬莱么？那便一国一国地走下去罢。' },
-    ])
+    for (let act = ctx.progress.prologueAct; act < PROLOGUE_ACTS.length; act += 1) {
+      await ctx.say([...PROLOGUE_ACTS[act]])
+      ctx.updateStory({ prologueAct: act + 1, prologueSeen: act === PROLOGUE_ACTS.length - 1 })
+    }
+    const event = SEA_EVENTS.find(item => ctx.progress.completed.includes(item.after) && !ctx.progress.seaEvents.includes(item.id))
+    if (event) {
+      await ctx.say([...event.lines])
+      ctx.updateStory({ seaEvents: [...ctx.progress.seaEvents, event.id] })
+    }
   },
 }

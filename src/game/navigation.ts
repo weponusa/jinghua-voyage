@@ -19,7 +19,8 @@ export type NavigationSnapshot = {
 
 const points = (arr: number[][]): MapPoint[] => arr.map(([x, z]) => ({ x, z }))
 const paths = (arr: number[][][]): MapPoint[][] => arr.map(points)
-const dock = (): Landmark => ({ id: 'dock', name: '归舟渡', x: 0, z: 19, note: '镜花到手后，由此登舟返航。', kind: 'dock' })
+const dock = (): Landmark => ({ id: 'dock', name: '归舟渡', x: 0, z: 19, note: '本章已了后，由此登舟返航；也可提前回船。', kind: 'dock' })
+const storyDock = (): Landmark => ({ ...dock(), note: '本章见闻已了后，由此登舟返航；也可提前回船。' })
 const bounds = { minX: -24, maxX: 24, minZ: -24, maxZ: 30 }
 
 export const JUNZI_PATHS = paths([
@@ -91,6 +92,36 @@ export const SCENE_MAPS: Record<ChapterId, SceneMap> = {
       { id: 'stele-garden', name: '学思碑林', x: -9, z: 2, note: '学、思、问、辨、行，五通石碑立在西路尽头。', kind: 'view' },
       { id: 'riddle-rack', name: '三灯谜架', x: 0, z: 0, note: '三盏灯笼各藏一道字谜，猜中后再去藏书楼。', kind: 'story' },
       { id: 'pond', name: '莲池', x: 7, z: 3, note: '池上莲叶田田，可在此稍歇赏景。', kind: 'view' }],
+  },
+  shushi: {
+    id: 'shushi', title: '淑士国 · 山海舆图', bounds, coast: [],
+    paths: paths([[[0, 18], [0, 10], [0, 4], [1.5, -1]], [[1.5, -1], [-4, -6], [-3, -9.5], [-5.1, -11.8]], [[-1.1, -10.9], [1.1, -11.1]]]),
+    landmarks: [storyDock(),
+      { id: 'tavern', name: '咬文酒楼', x: 1.5, z: -1, note: '酒保满口雅言，问清他到底肯不肯卖酒。', kind: 'quest' },
+      { id: 'scholar', name: '腐儒茶座', x: 0, z: -4.6, note: '听一段迂谈，辨别言辞与行事。', kind: 'story' },
+      { id: 'xu', name: '徐承志', x: -4, z: -6, note: '被淑士关所困的人，知道侧墙的秘密。', kind: 'quest' },
+      { id: 'check', name: '关防封条', x: 1.1, z: -11.1, note: '查看封条，找出守卒换岗的空隙。', kind: 'quest' },
+      { id: 'ladder', name: '短梯', x: -1.1, z: -10.9, note: '茶肆后墙的短梯，可助徐承志越关。', kind: 'quest' },
+      { id: 'wall', name: '淑士侧关', x: -5.1, z: -11.8, note: '备齐短梯与换岗信息后，送徐承志出关。', kind: 'view' }],
+  },
+  qishe: {
+    id: 'qishe', title: '歧舌国 · 山海舆图', bounds, coast: [],
+    paths: paths([[[0, 19], [0, 11], [0, 5], [0, -3]], [[0, 8], [-4, 7], [-8, 5], [-12, 5.8]], [[-8, 5], [-9.2, 9]], [[-5, 6], [-4.8, 5.5]], [[0, 4], [5, 2], [8.5, 0], [9, -4.4], [7.2, -7.2]]]),
+    landmarks: [storyDock(),
+      { id: 'medicine', name: '济世药圃', x: -8, z: 5, note: '寻找青蒿、金银花和药方，交给多九公救世子。', kind: 'quest' },
+      { id: 'prince', name: '世子', x: -9.4, z: 3.9, note: '药方齐备后，回来看看世子的病情。', kind: 'story' },
+      { id: 'phonics', name: '音韵台', x: 0, z: -4.15, note: '听音、辨调、排字，各有一关。', kind: 'quest' },
+      { id: 'lanterns', name: '花灯巷', x: 9, z: -4.4, note: '画谜、果谜与哑谜，解开后找多九公谈灯。', kind: 'quest' }],
+  },
+  nver: {
+    id: 'nver', title: '女儿国 · 山海舆图', bounds: { minX: -30, maxX: 30, minZ: -30, maxZ: 36 }, coast: [],
+    paths: paths([[[0, 27], [0, 18], [-4, 12], [-5, 7], [-2, 1], [1, -3]], [[-5, 7], [-8, 1], [-8, -6], [-12, -9], [-12, -12], [-18, -12]], [[-12, -12], [-15, -14], [-18, -16]], [[1, -3], [6, -7], [11, -5], [14, 0], [11, 5], [5, 7], [-5, 7]]]),
+    landmarks: [storyDock(),
+      { id: 'market', name: '女儿国街市', x: -5, z: 7, note: '与林之洋察看街市分工，故事由此入宫。', kind: 'quest' },
+      { id: 'palace', name: '宫院织房', x: -12, z: -12, note: '林之洋在此寻找竹管、货账与黄榜三条线索。', kind: 'quest' },
+      { id: 'notice', name: '治河黄榜', x: 1, z: -3, note: '唐敖揭榜，依次开启源水、分水、归漕三闸。', kind: 'quest' },
+      { id: 'sluices', name: '三闸河工', x: 11, z: -5, note: '源水闸 → 分水闸 → 归漕闸，错序会全部落闸。', kind: 'quest' },
+      { id: 'west-gate', name: '西水门', x: -19, z: -12, note: '双线信息会合后，林之洋由这里亲自出宫。', kind: 'view' }],
   },
   penglai: {
     id: 'penglai', title: '小蓬莱 · 山海舆图', bounds, coast: [],

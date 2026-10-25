@@ -127,6 +127,17 @@ export const wuchang: SceneDef = {
     }
 
     ctx.interact({
+      pos: new THREE.Vector3(2.2, 0, -5.4), radius: 2.1, verb: '查看剩饭', name: '食而复取', enabled: () => true,
+      run: () => ctx.say([
+        { who: NAMES.narrator, text: '锅里的剩饭又热了一遍，米粒已经散了，锅边却刮得干干净净。' },
+        { who: '老仆', text: '老爷食过，我们取来再食；我们食过，他又收回去。如此食而复取，一碗饭不知要过多少人的口。' },
+        { who: '小厮阿福', text: '什么滋味早不敢问了，能压住饿便好。' },
+        { who: NAMES.tang, text: '省下一粒米本是好事，可不能拿别人的饥饱来省。' },
+        { who: NAMES.duo, text: '节俭是不糟蹋东西；把别人该得的也扣下，就是刻薄了。' },
+      ]),
+    })
+
+    ctx.interact({
       pos: miser.position, radius: 2.8, verb: '交谈', name: '富翁', enabled: () => !solved,
       run: async () => {
         if (!talkedMiser) {

@@ -36,7 +36,10 @@ const PROFILES: Record<ScoreScene, Profile> = {
   liangmian: { bpm: 66, transpose: -2, lead: ['clarinet'], minor: true, sparse: true },
   wuchang: { bpm: 82, transpose: -5, lead: ['pizz', 'koto'], sparse: true, drums: true },
   baimin: { bpm: 76, transpose: 5, lead: ['clarinet', 'flute'], sparse: true },
+  shushi: { bpm: 64, transpose: -3, lead: ['clarinet'], minor: true, sparse: true },
   heichi: { bpm: 70, transpose: 7, lead: ['flute', 'koto'], drums: true },
+  qishe: { bpm: 84, transpose: 4, lead: ['koto', 'flute'], sparse: true, drums: true },
+  nver: { bpm: 72, transpose: -1, lead: ['harp', 'strings'], choir: true, sparse: true },
   penglai: { bpm: 60, transpose: 2, lead: ['flute', 'harp'], choir: true, drums: true },
 }
 

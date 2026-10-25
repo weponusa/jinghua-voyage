@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
 import { Voyage } from '../src/game/voyage'
+import { Input } from '../src/engine/input'
 
 describe('interaction input lifetime', () => {
   it('does not discard a key edge on a render-only high-refresh frame', () => {
@@ -30,5 +31,18 @@ describe('interaction input lifetime', () => {
 
     expect(renderer.render).toHaveBeenCalledOnce()
     expect(endFrame).not.toHaveBeenCalled()
+  })
+
+  it('retains pause until the render-time menu handler consumes it', () => {
+    const input = Object.create(Input.prototype) as Input
+    Object.assign(input as unknown as Record<string, unknown>, {
+      pressed_: new Set(['pause', 'interact']),
+    })
+
+    input.endFrame()
+
+    expect(input.consume('interact')).toBe(false)
+    expect(input.consume('pause')).toBe(true)
+    expect(input.consume('pause')).toBe(false)
   })
 })

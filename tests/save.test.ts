@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defaultSave, parseSave, SAVE_KEY, SaveStore } from '../src/engine/save'
-import { CHAPTER_ORDER, PLAYABLE, chapterCheckpoint, completeChapter, emptyProgress, flowerCount, isUnlocked, nextChapter, parseProgress, updateChapterCheckpoint } from '../src/game/progress'
+import { CHAPTER_ORDER, LEGACY_CHAPTER_ORDER, PLAYABLE, chapterCheckpoint, completeChapter, emptyProgress, flowerCount, isUnlocked, nextChapter, parseProgress, updateChapterCheckpoint } from '../src/game/progress'
 
 const ALL = CHAPTER_ORDER
 
@@ -17,6 +17,32 @@ describe('save', () => {
     expect(s.sfxVolume).toBe(0)
     expect(s.quality).toBe(defaultSave().quality)
     expect(s.progress.completed).toEqual(['junzi'])
+  })
+  it('migrates a fully completed v1 save without blocking the new chapters', () => {
+    const s = parseSave(JSON.stringify({ version: 1, progress: { route: 'linear', completed: LEGACY_CHAPTER_ORDER } }))
+    expect(s.version).toBe(2)
+    expect(s.progress.route).toBe('legacy')
+    expect(nextChapter(s.progress)).toBe('shushi')
+    expect(isUnlocked(s.progress, 'shushi')).toBe(true)
+    expect(isUnlocked(s.progress, 'qishe')).toBe(true)
+    expect(isUnlocked(s.progress, 'nver')).toBe(true)
+    expect(flowerCount(s.progress)).toBe(6)
+  })
+  it('continues a partial v1 save along the legacy main route', () => {
+    const s = parseSave(JSON.stringify({ version: 1, progress: { completed: ['junzi', 'daren', 'liangmian'] } }))
+    expect(s.progress.route).toBe('legacy')
+    expect(nextChapter(s.progress)).toBe('wuchang')
+    expect(isUnlocked(s.progress, 'wuchang')).toBe(true)
+    expect(isUnlocked(s.progress, 'heichi')).toBe(false)
+    expect(isUnlocked(s.progress, 'shushi')).toBe(true)
+  })
+  it('uses version 2 and the linear route for new saves', () => {
+    expect(defaultSave().version).toBe(2)
+    expect(defaultSave().progress.route).toBe('linear')
+    const s = parseSave(JSON.stringify({ version: 2, progress: { completed: ['junzi', 'daren'] } }))
+    expect(s.progress.route).toBe('linear')
+    expect(nextChapter(s.progress)).toBe('wuchang')
+    expect(isUnlocked(s.progress, 'liangmian')).toBe(false)
   })
   it('persists through storage and survives storage errors', () => {
     const mem = new Map<string, string>()
@@ -68,7 +94,40 @@ describe('voyage progress', () => {
     p = updateChapterCheckpoint(p, 'wuchang', { data: { carryingBowl: -1, fed: [0, 1] }, visited: ['afu'] })
     expect(chapterCheckpoint(p, 'wuchang')).toMatchObject({ data: { talkedMiser: true, carryingBowl: -1, fed: [0, 1] }, visited: ['afu'] })
     p = updateChapterCheckpoint(p, 'wuchang', { solved: true, flowerCollected: true })
+    expect(flowerCount(p)).toBe(1)
     const restored = parseProgress(JSON.parse(JSON.stringify(p)))
     expect(chapterCheckpoint(restored, 'wuchang')).toMatchObject({ solved: true, flowerCollected: true, data: { fed: [0, 1] } })
+  })
+  it('never creates flowers in story-only chapters', () => {
+    let p = updateChapterCheckpoint(emptyProgress(), 'shushi', { solved: true, flowerCollected: true })
+    p = parseProgress({
+      ...p,
+      completed: ['shushi', 'qishe', 'nver', 'penglai'],
+      chapters: {
+        ...p.chapters,
+        qishe: { flowerCollected: true },
+        nver: { solved: true, flowerCollected: true },
+        penglai: { flowerCollected: true },
+      },
+    })
+    for (const id of ['shushi', 'qishe', 'nver', 'penglai'] as const) {
+      expect(chapterCheckpoint(p, id).flowerCollected).toBe(false)
+    }
+    expect(chapterCheckpoint(p, 'nver').solved).toBe(true)
+    expect(flowerCount(p)).toBe(0)
+  })
+  it('sanitizes new story fields and preserves valid values', () => {
+    const valid = parseProgress({
+      route: 'legacy',
+      prologueAct: 2.9,
+      seaEvents: ['storm', 'storm', 'rescue'],
+      endingChoice: 'stay',
+      epilogueSeen: true,
+    })
+    expect(valid).toMatchObject({ route: 'legacy', prologueAct: 2, seaEvents: ['storm', 'rescue'], endingChoice: 'stay', epilogueSeen: true })
+    const invalid = parseProgress({ route: 'other', prologueAct: 99, seaEvents: ['storm', 1, null], endingChoice: 'other', epilogueSeen: 'yes' })
+    expect(invalid).toMatchObject({ route: 'linear', prologueAct: 3, seaEvents: ['storm'], endingChoice: null, epilogueSeen: false })
+    expect(parseProgress({ prologueAct: -2 }).prologueAct).toBe(0)
+    expect(parseProgress({ prologueAct: '2' }).prologueAct).toBe(0)
   })
 })

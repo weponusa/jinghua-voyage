@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { NAMES, dockAndReturn, duoSpec, lanternPosts, type SceneDef } from '../chapter'
+import { NAMES, dockAndReturn, duoSpec, linSpec, lanternPosts, type SceneDef } from '../chapter'
 import type { Npc } from '../npc'
 import { CHAPTERS } from '../story'
 import { villager } from '../stage'
@@ -44,7 +44,7 @@ type Folk = { npc: Npc; evil: boolean; flap: THREE.Mesh; face: THREE.Mesh; seen:
 export const liangmian: SceneDef = {
   id: 'liangmian',
   palette: M.palette,
-  models: ['duojiugong', 'liangmian', 'elder', 'twin_screen', 'stern_cypress', 'bamboo', 'rock_tallB', 'plant_bush', 'canoe', 'grass_large', 'fence_simple'],
+  models: ['duojiugong', 'linzhiyang', 'liangmian', 'elder', 'twin_screen', 'stern_cypress', 'bamboo', 'rock_tallB', 'plant_bush', 'canoe', 'grass_large', 'fence_simple'],
   spawn: new THREE.Vector3(0, 1.2, 13),
   yaw: 0,
   async build(ctx) {
@@ -57,6 +57,7 @@ export const liangmian: SceneDef = {
     })
     const saved = ctx.checkpoint
     let solved = saved.solved
+    let clothesTested = saved.data.clothesTested === true
 
     const plaza = new THREE.Mesh(new THREE.CircleGeometry(7, 40), new THREE.MeshLambertMaterial({ color: '#d9c49a' }))
     plaza.rotation.x = -Math.PI / 2
@@ -139,6 +140,27 @@ export const liangmian: SceneDef = {
 
     const keeper = await ctx.npc({ name: '守门老者', model: 'elder', x: -3, z: 7.5, yaw: Math.PI * 0.8, fallback: () => villager('#8a8070', { hat: '#c9a66b', hatShape: 'straw', height: 1.5 }) })
     const duo = await ctx.npc(duoSpec(2.2, 12, Math.PI))
+    const lin = await ctx.npc(linSpec(3.5, 7.5, -Math.PI * 0.7))
+    ctx.interact({
+      pos: lin.position, radius: 2.5, verb: () => clothesTested ? '重温试衣' : '换衣试人', name: NAMES.lin, enabled: () => true,
+      run: async () => {
+        if (clothesTested) {
+          await ctx.say([{ who: NAMES.lin, text: '衣裳一换，赵掌柜的笑脸便换了人。他哪里是认人，分明是认衣裳。' }])
+          return
+        }
+        await ctx.say([
+          { who: NAMES.lin, text: '唐兄，咱们再试赵掌柜一回。你穿绸衫，我穿布衫，看他先招呼谁。' },
+          { who: NAMES.narrator, text: '唐敖穿着绸衫，林之洋穿着粗布衫，一同来到赵掌柜面前。' },
+          { who: '赵掌柜', text: '唐老爷快请坐！那个穿布的，别在旁边挡道。' },
+          { who: NAMES.narrator, text: '两人转到廊下，把绸衫布衫对调，又走了回来。' },
+          { who: '赵掌柜', text: '哎哟，林老爷！方才小的眼拙。至于这个穷酸，站远些罢！' },
+          { who: NAMES.lin, text: '方才我还是穷鬼，披了你的绸衫就成老爷了？' },
+          { who: NAMES.tang, text: '你我没变，他的笑脸却掉了个头。原来他认的是衣裳，不是人。' },
+        ])
+        clothesTested = true
+        ctx.updateCheckpoint({ data: { clothesTested: true } })
+      },
+    })
     ctx.interact({
       pos: duo.position, radius: 2.4, verb: '交谈', name: NAMES.duo, enabled: () => true,
       run: () => ctx.say([{ who: NAMES.duo, text: '人前笑脸，谁都会摆。唐兄不妨绕到他们身后，悄悄瞧上一眼。' }]),

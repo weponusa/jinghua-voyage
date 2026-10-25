@@ -1,6 +1,6 @@
 // Full-voyage playtest against a running server (default: dev server on :3000).
-// Plays every chapter's solution through the real interactables, collects each mirror flower,
-// sails back, and finishes at 小蓬莱. Fails on console errors. Screenshots go to ./shots/.
+// Plays every chapter's solution through the real interactables, collects the six mirror flowers,
+// records the three story chapters, sails back, and finishes at 小蓬莱. Screenshots go to ./shots/.
 import { mkdirSync } from 'node:fs'
 import { chromium } from 'playwright'
 
@@ -14,18 +14,27 @@ mkdirSync(out, { recursive: true })
 const SOLUTIONS = {
   junzi: [['买卖二人', [0, 2]]],
   daren: [['老婆婆', [0]], ['孩童', [0]], ['钱袋', [0]], ['卖油郎', []], ['大人国长者', []]],
-  liangmian: [['守门老者', [1, 1]]],
   wuchang: [['富翁', []], ['热饭', []], ['小厮阿福', []], ['热饭', []], ['厨娘', []], ['热饭', []], ['老仆', []], ['富翁', [1, 0]]],
-  baimin: [['塾师', []], ['书页', []], ['书页', []], ['书页', []], ['塾师', [0, 1, 1]]],
   heichi: [['二位才女', []], ['灯谜一', [0]], ['灯谜二', [1]], ['灯谜三', [0]], ['二位才女', []]],
+  baimin: [['塾师', []], ['书页', []], ['书页', []], ['书页', []], ['塾师', [0, 1, 1]]],
+  shushi: [['酒保', []], ['腐儒', [0]], ['徐承志', []], ['巡关告示', []], ['旧关牒', []], ['北侧墙', []], ['淑士关侧门', []]],
+  liangmian: [['守门老者', [1, 1]]],
+  qishe: [['多九公', []], ['青蒿', []], ['金银花', []], ['药方', []], ['多九公', []], ['音韵台·听音', [1]], ['音韵台·辨调', [3]], ['音韵台·排字', [0]], ['花灯·画谜', [0]], ['花灯·果谜', [1]], ['花灯·哑谜', [1]], ['多九公', []]],
+  nver: [['林之洋', []], ['织机与竹管', []], ['防水绸货账', [1]], ['女官文绮', []], ['西窗竹管', []], ['治河黄榜', []], ['源水闸', []], ['分水闸', []], ['归漕闸', []], ['河工竹管', []], ['女官文绮', [1]], ['西水门', []]],
   penglai: [['镜台', [1]]],
 }
+const STORY_CHAPTERS = new Set(['shushi', 'qishe', 'nver'])
+const FLOWER_CHAPTERS = ['junzi', 'daren', 'wuchang', 'heichi', 'baimin', 'liangmian']
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
 const context = await browser.newContext(mobile
   ? { viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
   : { viewport: { width: 1280, height: 760 } })
 const page = await context.newPage()
+const flowerTotal = () => page.evaluate(ids => {
+  const p = window.__game.save.data.progress
+  return ids.filter(id => p.completed.includes(id) || (id === 'junzi' ? p.junzi.flowerCollected : p.chapters[id]?.flowerCollected)).length
+}, FLOWER_CHAPTERS)
 const errors = []
 page.on('console', m => m.type() === 'error' && errors.push(m.text()))
 page.on('pageerror', e => errors.push(String(e)))
@@ -98,10 +107,12 @@ if (moved < 0.5) errors.push(`player did not move with ${mobile ? 'touch joystic
 if (mobile && !(await page.evaluate(() => window.__game.input.method === 'touch' && document.body.classList.contains('is-touch')))) errors.push('touch controls did not activate')
 
 let n = 2
-const PLAYABLE = (process.env.CHAPTERS ?? 'junzi,daren,liangmian,wuchang,baimin,heichi,penglai').split(',')
+const PLAYABLE = (process.env.CHAPTERS ?? 'junzi,daren,wuchang,heichi,baimin,shushi,liangmian,qishe,nver,penglai').split(',')
 for (const [id, steps] of Object.entries(SOLUTIONS).filter(([id]) => PLAYABLE.includes(id))) {
   await page.evaluate(id => window.__game.voyage.enter(id), id)
   await waitFor(id => window.__game.voyage.sceneId === id && window.__game.voyage.mode === 'explore', id, { timeout: 30_000 })
+  const story = STORY_CHAPTERS.has(id)
+  const flowersBefore = story ? await flowerTotal() : 0
   await page.waitForTimeout(600)
   await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-${id}.png` })
   if (id === 'liangmian') {
@@ -148,9 +159,15 @@ for (const [id, steps] of Object.entries(SOLUTIONS).filter(([id]) => PLAYABLE.in
         const mini = document.querySelector('.mini-map-button')
         const miniRect = mini.getBoundingClientRect()
         const overMini = mini.getClientRects().length ? document.elementFromPoint(miniRect.x + miniRect.width / 2, miniRect.y + miniRect.height / 2) : null
-        return { entries: scroll.querySelectorAll('.ending-list li').length, fits: scroll.scrollHeight <= scroll.clientHeight + 2, buttonVisible: button.top >= 0 && button.bottom <= innerHeight, hudCovered: !overMini || !!overMini.closest('.ending') }
+        return {
+          entries: scroll.querySelectorAll('.ending-list li').length,
+          epilogue: scroll.querySelector('.ending-epilogue')?.textContent ?? '',
+          fits: scroll.scrollHeight <= scroll.clientHeight + 2,
+          buttonVisible: button.top >= 0 && button.bottom <= innerHeight,
+          hudCovered: !overMini || !!overMini.closest('.ending'),
+        }
       })
-      if (endingLayout.entries !== 6 || !endingLayout.fits || !endingLayout.buttonVisible || !endingLayout.hudCovered) errors.push(`ending layout invalid: ${JSON.stringify(endingLayout)}`)
+      if (endingLayout.entries !== 6 || !endingLayout.epilogue.includes('唐小山') || !endingLayout.fits || !endingLayout.buttonVisible || !endingLayout.hudCovered) errors.push(`ending layout invalid: ${JSON.stringify(endingLayout)}`)
       await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-ending.png` })
       if (mobile) await page.locator('.ending.is-active [data-action="overlay-ok"]').tap()
       else await page.click('.ending.is-active [data-action="overlay-ok"]')
@@ -169,14 +186,26 @@ for (const [id, steps] of Object.entries(SOLUTIONS).filter(([id]) => PLAYABLE.in
     await waitFor(() => window.__game.voyage.sceneId === 'hub', null, { timeout: 60_000 })
     break
   }
-  const flower = await page.evaluate(() => window.__game.voyage.debugFlower())
-  const already = await page.evaluate(() => window.__game.voyage.debug().hasFlower)
-  if (!flower && !already) { errors.push(`${id}: no mirror flower appeared`); break }
-  if (flower) await page.evaluate(f => window.__game.voyage.debugTeleport(f.x, f.y, f.z), flower)
-  await page.waitForTimeout(1200)
-  await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-${id}-done.png` })
-  const has = await page.evaluate(() => window.__game.voyage.debug().hasFlower)
-  if (!has) errors.push(`${id}: flower not collected`)
+  if (story) {
+    const state = await page.evaluate(id => ({
+      hasFlower: window.__game.voyage.debug().hasFlower,
+      solved: window.__game.save.data.progress.chapters[id]?.solved === true,
+      flowerCollected: window.__game.save.data.progress.chapters[id]?.flowerCollected === true,
+    }), id)
+    if (state.hasFlower !== false || state.flowerCollected) errors.push(`${id}: story chapter must not own a mirror flower`)
+    if (!state.solved) errors.push(`${id}: story checkpoint not solved`)
+    if (await flowerTotal() !== flowersBefore) errors.push(`${id}: story puzzle changed the flower total`)
+    await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-${id}-done.png` })
+  } else {
+    const flower = await page.evaluate(() => window.__game.voyage.debugFlower())
+    const already = await page.evaluate(() => window.__game.voyage.debug().hasFlower)
+    if (!flower && !already) { errors.push(`${id}: no mirror flower appeared`); break }
+    if (flower) await page.evaluate(f => window.__game.voyage.debugTeleport(f.x, f.y, f.z), flower)
+    await page.waitForTimeout(1200)
+    await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-${id}-done.png` })
+    const has = await page.evaluate(() => window.__game.voyage.debug().hasFlower)
+    if (!has) errors.push(`${id}: flower not collected`)
+  }
   await page.evaluate(() => { window.__sealRun = window.__game.voyage.debugInteract('小舟'); return true })
   await waitFor(() => document.querySelector('.seal')?.classList.contains('is-active'), null, { timeout: 10_000 })
   await page.waitForTimeout(450)
@@ -185,6 +214,7 @@ for (const [id, steps] of Object.entries(SOLUTIONS).filter(([id]) => PLAYABLE.in
   else await page.click('.seal.is-active [data-action="overlay-ok"]')
   await page.evaluate(() => window.__sealRun)
   await waitFor(() => window.__game.voyage.sceneId === 'hub' && window.__game.voyage.mode === 'explore', null, { timeout: 30_000 })
+  if (story && await flowerTotal() !== flowersBefore) errors.push(`${id}: story completion changed the flower total`)
 }
 const progress = await page.evaluate(() => window.__game.save.data.progress.completed)
 console.log('completed:', progress.join(','))
@@ -197,7 +227,7 @@ await waitFor(() => document.querySelector('.chart')?.classList.contains('is-act
 await waitFor(() => Number(getComputedStyle(document.querySelector('.chart')).opacity) > 0.99, null, { timeout: 30_000 })
 await page.waitForFunction(() => {
   const images = [...document.querySelectorAll('.chart-sea .port.has-portrait img.island-portrait')]
-  return images.length === 7 && images.every(image => image.complete && image.naturalWidth >= 300)
+  return images.length === 10 && images.every(image => image.complete && image.naturalWidth >= 300)
 }, null, { timeout: 60_000 })
 await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-chart.png` })
 await page.keyboard.press('Escape')

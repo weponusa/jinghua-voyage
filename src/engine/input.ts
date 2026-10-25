@@ -2,7 +2,8 @@
  * Unified input: keyboard + mouse (pointer lock), gamepad and touch all feed one action state.
  * Gameplay reads `move`, `look` and `pressed()/held()`; it never checks raw keys.
  *
- * Call `endFrame()` once per rendered frame after gameplay consumed edge-triggered presses.
+ * Call `endFrame()` once per fixed gameplay step after gameplay consumed edge-triggered presses.
+ * Pause is retained for the render-time menu handler in boot.ts.
  */
 export type Action = 'jump' | 'sprint' | 'dash' | 'pause' | 'confirm' | 'back' | 'interact'
 export type InputMethod = 'keyboard' | 'gamepad' | 'touch'
@@ -180,7 +181,11 @@ export class Input {
   }
 
   endFrame(): void {
-    this.pressed_.clear()
+    // Gameplay actions are consumed inside fixed steps, but pause is handled by the render loop.
+    // Clearing it here loses Esc whenever a low-FPS frame runs a fixed step before rendering.
+    for (const action of this.pressed_) {
+      if (action !== 'pause') this.pressed_.delete(action)
+    }
   }
 
   dispose(): void {

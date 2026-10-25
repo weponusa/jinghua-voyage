@@ -13,6 +13,9 @@ import { liangmian } from './chapters/liangmian'
 import { wuchang } from './chapters/wuchang'
 import { baimin } from './chapters/baimin'
 import { heichi } from './chapters/heichi'
+import { shushi } from './chapters/shushi'
+import { qishe } from './chapters/qishe'
+import { nver } from './chapters/nver'
 import { penglai } from './chapters/penglai'
 import { instance, preload } from './models'
 import { disposeScene } from './dispose'
@@ -20,13 +23,13 @@ import { createMapIllustration } from './map-illustration'
 import { JUNZI_MAP, SCENE_MAPS, distanceTo, type NavigationSnapshot, type SceneMap } from './navigation'
 import { Npc, type NpcSpec } from './npc'
 import { Player, type PlayerEvent } from './player'
-import { chapterCheckpoint, completeChapter, isUnlocked, KINGDOMS, TEST_ALL_CHAPTERS, updateChapterCheckpoint, updateJunzi, type ChapterId } from './progress'
+import { chapterCheckpoint, completeChapter, flowerCount, isUnlocked, KINGDOMS, TEST_ALL_CHAPTERS, updateChapterCheckpoint, updateJunzi, type ChapterId } from './progress'
 import { CHAPTERS } from './story'
 import { mirrorFlower, objectiveMarker, Stage } from './stage'
 import { WATER_Y } from './terrain'
 
-/** Complete seven-chapter voyage, with the first chapter's navigation and animation refinements. */
-export const SCENES: Record<ChapterId | 'hub', SceneDef> = { hub, junzi, daren, liangmian, wuchang, baimin, heichi, penglai }
+/** Complete ten-chapter voyage: six flower kingdoms, three character stories and the finale. */
+export const SCENES: Record<ChapterId | 'hub', SceneDef> = { hub, junzi, daren, wuchang, heichi, baimin, shushi, liangmian, qishe, nver, penglai }
 
 export type Mode = 'title' | 'loading' | 'explore' | 'dialog' | 'menu' | 'paused'
 
@@ -40,7 +43,7 @@ export interface VoyageUi {
   flowers(n: number, flash?: boolean): void
   veil(on: boolean, label?: string, progress?: number): Promise<void>
   seal(id: ChapterId, firstTime: boolean): Promise<void>
-  ending(): Promise<void>
+  ending(choice: 'stay' | 'return'): Promise<void>
   chart(): Promise<ChapterId | null>
   place(label: string): void
   navigation(snapshot: NavigationSnapshot): void
@@ -121,10 +124,7 @@ export class Voyage {
       this.renderer.render(next.stage.scene, next.cam.camera)
       await this.ui.veil(false)
       this.mode = 'explore'
-      if (intro && def.start) {
-        await def.start(next.ctx)
-        if (id === 'hub' && !this.progress.prologueSeen) this.save.update({ progress: { ...this.progress, prologueSeen: true } })
-      }
+      if (intro && def.start) await def.start(next.ctx)
     } catch (error) {
       console.warn('场景加载失败，可重新选择航线', error)
       await this.ui.veil(false)
@@ -138,7 +138,7 @@ export class Voyage {
   }
 
   private flowerTotal(): number {
-    return TEST_ALL_CHAPTERS ? 6 : KINGDOMS.filter(id => this.progress.completed.includes(id) || chapterCheckpoint(this.progress, id).flowerCollected).length
+    return flowerCount(this.progress)
   }
 
   private async build(def: SceneDef): Promise<Active> {
@@ -159,7 +159,7 @@ export class Voyage {
     const voyage = this
     const a: Active = {
       def, stage, physics, player, cam, npcs: [], things: [], updaters: [], flower: null,
-      hasFlower: def.id !== 'hub' && def.id !== 'penglai' && (TEST_ALL_CHAPTERS || chapterCheckpoint(this.progress, def.id).flowerCollected), target: null, marker, spawn: null,
+      hasFlower: def.id !== 'hub' && def.id !== 'penglai' && KINGDOMS.includes(def.id) && (TEST_ALL_CHAPTERS || chapterCheckpoint(this.progress, def.id).flowerCollected), target: null, marker, spawn: null,
       guide, map: JUNZI_MAP, objectiveText: '', trackedId: null,
       ctx: undefined as unknown as Ctx,
     }
@@ -167,9 +167,19 @@ export class Voyage {
       stage, scene: stage.scene, physics, player,
       get progress() { return voyage.progress },
       get hasFlower() { return a.hasFlower },
+      get canFinish() {
+        if (def.id === 'hub') return false
+        if (def.id === 'penglai' || !KINGDOMS.includes(def.id)) return chapterCheckpoint(voyage.progress, def.id).solved
+        return a.hasFlower
+      },
       updateJunzi: patch => { this.save.update({ progress: updateJunzi(this.progress, patch) }) },
       get checkpoint() { return chapterCheckpoint(voyage.progress, def.id as ChapterId) },
       updateCheckpoint: patch => { if (def.id !== 'hub') this.save.update({ progress: updateChapterCheckpoint(this.progress, def.id, patch) }) },
+      updateStory: patch => {
+        const seaEvents = patch.seaEvents ? [...new Set([...this.progress.seaEvents, ...patch.seaEvents])] : this.progress.seaEvents
+        const prologueAct = Math.max(this.progress.prologueAct, patch.prologueAct ?? 0)
+        this.save.update({ progress: { ...this.progress, ...patch, seaEvents, prologueAct } })
+      },
       say: lines => this.say(lines),
       choose: (who, text, options) => this.choose(who, text, options),
       objective: (text, target) => {
@@ -190,7 +200,7 @@ export class Voyage {
       },
       onUpdate: fn => void a.updaters.push(fn),
       spawnFlower: pos => {
-        if (a.hasFlower || a.flower) return
+        if (def.id === 'hub' || !KINGDOMS.includes(def.id) || a.hasFlower || a.flower) return
         const f = mirrorFlower()
         f.position.copy(pos)
         stage.scene.add(f)
@@ -200,7 +210,7 @@ export class Voyage {
       finish: () => void this.finishChapter(def.id as ChapterId),
       leave: () => void this.enter('hub'),
       openChart: () => void this.openChart(),
-      ending: () => this.ui.ending(),
+      ending: choice => this.ui.ending(choice),
       setSpawn: pos => void (a.spawn = pos.clone()),
     }
     try {
@@ -286,7 +296,8 @@ export class Voyage {
   }
 
   private async finishChapter(id: ChapterId): Promise<void> {
-    if ((!this.active?.hasFlower && id !== 'penglai') || this.mode === 'menu') return
+    const active = this.active
+    if (!active || active.def.id !== id || !active.ctx.canFinish || this.mode === 'menu') return
     const { progress, firstTime } = completeChapter(this.progress, id)
     this.save.update({ progress })
     this.mode = 'menu'

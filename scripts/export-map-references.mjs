@@ -7,10 +7,13 @@ const out = fileURLToPath(new URL('../shots/map-reference-2026-10-25/', import.m
 mkdirSync(out, { recursive: true })
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
 const page = await browser.newPage({ viewport: { width: 900, height: 650 } })
+page.on('pageerror', error => console.error('pageerror:', error.message))
+page.on('console', message => { if (message.type() === 'error' || message.type() === 'warning') console.error(`${message.type()}: ${message.text()}`) })
 try {
   await page.goto(process.env.URL ?? 'http://127.0.0.1:3003/?test=1')
   await page.waitForSelector('[data-screen="title"].is-active', { timeout: 60_000 })
-  for (const id of ['hub', 'junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai']) {
+  const ids = (process.env.MAPS ?? 'hub,junzi,daren,wuchang,heichi,baimin,shushi,liangmian,qishe,nver,penglai').split(',')
+  for (const id of ids) {
     await page.evaluate(id => window.__game.voyage.enter(id, false), id)
     await page.waitForFunction(id => window.__game.voyage.sceneId === id && window.__game.voyage.mode === 'explore', id, { timeout: 45_000 })
     const data = await page.evaluate(() => window.__game.voyage.active.map.illustration)

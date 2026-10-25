@@ -1,4 +1,6 @@
 import { mapPercent, type Landmark, type NavigationSnapshot, type SceneMap } from '../game/navigation'
+import type { ChapterId } from '../game/progress'
+import { CHAPTERS } from '../game/story'
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
@@ -9,7 +11,7 @@ export const distanceLabel = (distance: number): string => {
 
 type MapRole = 'mini' | 'local'
 
-const PAINTED_MAPS = new Set(['hub', 'junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai'])
+const PAINTED_MAPS = new Set(['hub', 'junzi', 'daren', 'wuchang', 'heichi', 'baimin', 'shushi', 'liangmian', 'qishe', 'nver', 'penglai'])
 export const paintedMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `./interface/map-${id}.webp` : null
 export const miniMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `./interface/mini-${id}.webp` : null
 
@@ -182,7 +184,7 @@ export class LocalMapRenderer {
         </section>
         <aside class="local-map-detail" aria-live="polite"></aside>
       </div>
-      ${snapshot.map.id === 'junzi' ? '<section class="local-map-journal" aria-label="君子国游记"><div class="journal-head"><h3>游记 · 五处见闻</h3><span>读牌或交谈后收录</span></div><div class="journal-list"></div></section>' : '<section class="local-map-journal"><div class="journal-head"><h3>甲板行路</h3></div><p>图桌可择港启航，同行人可交谈。此图只作甲板指引；君子国的五处见闻请在岛上查看。</p></section>'}`
+      ${snapshot.map.id === 'junzi' ? '<section class="local-map-journal" aria-label="君子国游记"><div class="journal-head"><h3>游记 · 五处见闻</h3><span>读牌或交谈后收录</span></div><div class="journal-list"></div></section>' : snapshot.map.id === 'hub' ? '<section class="local-map-journal"><div class="journal-head"><h3>甲板行路</h3></div><p>图桌可择港启航，同行人可交谈。此图只作甲板指引；君子国的五处见闻请在岛上查看。</p></section>' : `<section class="local-map-journal"><div class="journal-head"><h3>百花航海志</h3></div><p>${esc(CHAPTERS[snapshot.map.id as ChapterId].blurb)}</p></section>`}`
     this.fullMapId = snapshot.map.id
     this.fullIllustration = snapshot.map.illustration
     this.renderFullDetail()
@@ -193,10 +195,11 @@ export class LocalMapRenderer {
       return '<ul class="chapter-state"><li class="is-done"><i></i>图桌：选择已开放航线</li><li class="is-done"><i></i>同行人：靠近后交谈</li><li class="is-done"><i></i>北向坐标：对应实际甲板</li></ul>'
     }
     const state = snapshot.chapter
+    const meta = CHAPTERS[snapshot.map.id as ChapterId]
     const items = [
-      `<li class="${state.solved ? 'is-done' : ''}"><i></i>让利集评理：${state.solved ? '已明辨' : '尚待分说'}</li>`,
-      `<li class="${state.collected ? 'is-done' : ''}"><i></i>镜花：${state.collected ? '已收入囊中' : '尚未取得'}</li>`,
-      `<li class="${state.completed ? 'is-done' : ''}"><i></i>本章：${state.completed ? '已完成，可重游' : '尚在游历'}</li>`,
+      `<li class="${state.solved ? 'is-done' : ''}"><i></i>${meta.kind === 'flower' ? '本国主题' : '本章主线'}：${state.solved ? '已明了' : '尚在游历'}</li>`,
+      ...(meta.kind === 'flower' ? [`<li class="${state.collected ? 'is-done' : ''}"><i></i>镜花：${state.collected ? '已收入囊中' : '尚未取得'}</li>`] : []),
+      `<li class="${state.completed ? 'is-done' : ''}"><i></i>本章：${state.completed ? '已完成，可重游' : '尚未返航盖印'}</li>`,
     ]
     return `<ul class="chapter-state">${items.join('')}</ul>`
   }

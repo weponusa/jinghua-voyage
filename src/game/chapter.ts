@@ -32,11 +32,14 @@ export interface Ctx {
   readonly progress: Progress
   /** True once this visit's mirror flower has been picked up. */
   readonly hasFlower: boolean
+  /** Flower chapters need their flower; story chapters need a solved main event. */
+  readonly canFinish: boolean
   /** Save a first-chapter checkpoint without losing previously visited landmarks. */
   updateJunzi(patch: Partial<JunziProgress>): void
   /** Current island's JSON checkpoint; update immediately after each meaningful action. */
   readonly checkpoint: ChapterCheckpoint
   updateCheckpoint(patch: Partial<ChapterCheckpoint>): void
+  updateStory(patch: Partial<Pick<Progress, 'prologueAct' | 'prologueSeen' | 'seaEvents' | 'ending' | 'endingChoice' | 'epilogueSeen'>>): void
   say(lines: Line[]): Promise<void>
   choose(who: string, text: string, options: string[]): Promise<number>
   /** Set the bottom quest line and (optionally) the world marker target. */
@@ -54,8 +57,8 @@ export interface Ctx {
   leave(): void
   /** Open the sea chart (hub only). */
   openChart(): void
-  /** Show the ending scroll (finale only). */
-  ending(): Promise<void>
+  /** Show the selected ending scroll and Tang Xiaoshan epilogue (finale only). */
+  ending(choice: 'stay' | 'return'): Promise<void>
   /** Override where Tang Ao appears (default: def.spawn placed on the ground). */
   setSpawn(pos: THREE.Vector3): void
 }
@@ -135,8 +138,14 @@ export async function dockAndReturn(ctx: Ctx, id: ChapterId, at: THREE.Vector3, 
     pos: spot, radius: 2.2, verb: '登船', name: '小舟',
     enabled: () => true,
     run: async () => {
-      if (!ctx.hasFlower) {
-        const pick = await ctx.choose(NAMES.duo, `${CHAPTERS[id].name}的镜花还未寻得，唐兄要先回船上么？`, ['再看看', '先回船上'])
+      if (id === 'penglai') {
+        const pick = await ctx.choose(NAMES.duo, '仙山行路未尽，唐兄要先回船上么？', ['再走走', '先回船上'])
+        if (pick === 1) ctx.leave()
+        return
+      }
+      if (!ctx.canFinish) {
+        const waiting = CHAPTERS[id].kind === 'flower' ? '镜花还未寻得' : '本章见闻还未了'
+        const pick = await ctx.choose(NAMES.duo, `${CHAPTERS[id].name}${waiting}，唐兄要先回船上么？`, ['再看看', '先回船上'])
         if (pick === 1) ctx.leave()
         return
       }

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { NAMES, dockAndReturn, duoSpec, type SceneDef } from '../chapter'
+import { NAMES, dockAndReturn, duoSpec, linSpec, type SceneDef } from '../chapter'
 import { CHAPTERS } from '../story'
 import { lantern, villager } from '../stage'
 
@@ -39,7 +39,7 @@ function cloud(scale = 1): { group: THREE.Group; tint: (good: number, bad: numbe
 export const daren: SceneDef = {
   id: 'daren',
   palette: M.palette,
-  models: ['duojiugong', 'daren', 'official', 'granny', 'child', 'oilseller', 'cloud_gate', 'peach_tree', 'sky_palm', 'flower_purpleA', 'flower_yellowA', 'plant_bushLarge', 'canoe', 'stone_tallC'],
+  models: ['duojiugong', 'linzhiyang', 'daren', 'official', 'granny', 'child', 'oilseller', 'cloud_gate', 'peach_tree', 'sky_palm', 'flower_purpleA', 'flower_yellowA', 'plant_bushLarge', 'canoe', 'stone_tallC'],
   spawn: new THREE.Vector3(0, 1.2, 13),
   yaw: 0,
   async build(ctx) {
@@ -243,6 +243,22 @@ export const daren: SceneDef = {
       pos: duo.position, radius: 2.4, verb: '交谈', name: NAMES.duo, enabled: () => true,
       run: () => ctx.say([{ who: NAMES.duo, text: `唐兄脚下的云彩，如今是${good() === 3 ? '七彩祥云' : bad() > good() ? '乌云一团' : '淡淡几分颜色'}。` }]),
     })
+
+    const poor = await ctx.npc({ name: '贫贱者', model: 'oilseller', x: -5.4, z: 10.3, yaw: Math.PI * 0.6, fallback: () => villager('#766b58', { hatShape: 'straw', height: 1.55 }) })
+    const poorCloud = cloud(0.9)
+    poorCloud.tint(1, 0)
+    poorCloud.group.position.set(poor.position.x, s.groundHeight(poor.position.x, poor.position.z) + 0.08, poor.position.z)
+    s.scene.add(poorCloud.group)
+    const lin = await ctx.npc(linSpec(-3.3, 11.2, -Math.PI * 0.6))
+    const cloudTalk = () => ctx.say([
+      { who: '贫贱者', text: '我穷归穷，脚下倒有彩云。林老板，你说这云公道不公道？' },
+      { who: NAMES.lin, text: '有心向善，穷人也能踩彩云，这倒公道。可见人云黑便不问缘由，只怕又冤枉人。' },
+      { who: NAMES.tang, text: '云能照见行事，却不能替人把话说完。该劝的劝，该问的还得问。' },
+      { who: NAMES.lin, text: '对，别拿云色当身价，更别拿它堵住旁人的嘴。' },
+    ])
+    ctx.interact({ pos: poor.position, radius: 2.5, verb: '谈云色', name: '贫贱者与林之洋', enabled: () => true, run: cloudTalk })
+    ctx.interact({ pos: lin.position, radius: 2.3, verb: '谈云色', name: NAMES.lin, enabled: () => true, run: cloudTalk })
+    ctx.onUpdate((_, t) => { poorCloud.group.rotation.y = t * 0.25 })
 
     for (const [x, z] of [[-3, 4], [3, 4], [-5, -4], [5, -4]] as const) {
       const l = lantern('#7b5ea7')

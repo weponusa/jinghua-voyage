@@ -253,6 +253,36 @@ export const junzi: SceneDef = {
       },
     })
 
+    // Optional market scenes from the novel: courtesy is shown in more than one kind of trade.
+    const clothSeller = await ctx.npc({ name: '布商', model: 'seller', x: -5.4, z: 1, yaw: Math.PI * 0.7, fallback: () => villager('#6b8e7d', { hatShape: 'cap' }) })
+    const clothBuyer = await ctx.npc({ name: '买布人', model: 'buyer', x: -3.9, z: 1.4, yaw: -Math.PI * 0.7, fallback: () => villager('#8b6a9a', { hatShape: 'cap' }) })
+    const wuZhihe = await ctx.npc({ name: '吴之和', model: 'elder', x: 5.6, z: 1, yaw: Math.PI * 0.65, fallback: () => villager('#597b86', { hatShape: 'tall' }) })
+    const wuZhixiang = await ctx.npc({ name: '吴之祥', model: 'oilseller', x: 7, z: 0.2, yaw: -Math.PI * 0.65, fallback: () => villager('#8a7358', { hatShape: 'tall' }) })
+    ctx.interact({
+      pos: clothSeller.position, radius: 2.2, verb: '听买卖', name: '布商让尺', enabled: () => true,
+      run: () => ctx.say([
+        { who: '布商', text: '这匹布只算八尺的钱，我多送客官二尺。' },
+        { who: '买布人', text: '你熬夜织出来的，哪能白送？我偏要按十尺付。' },
+        { who: NAMES.tang, text: '一个怕多收，一个怕少给。你们争的，倒不是自己的便宜。' },
+      ]),
+    })
+    ctx.interact({
+      pos: clothBuyer.position, radius: 2.2, verb: '问见闻', name: '盐柴相酬', enabled: () => true,
+      run: () => ctx.say([
+        { who: '买布人', text: '上回我买盐，店家只收粗盐钱，偏要给我雪花盐。' },
+        { who: '布商', text: '你也不肯白占便宜，第二天就给他送了两捆柴。' },
+        { who: NAMES.tang, text: '不白拿，也不驳回别人的好意。这样来往，两边都痛快。' },
+      ]),
+    })
+    const wuTalk = () => ctx.say([
+      { who: '吴之和', text: '争来的利，不过眼前一点；肯让一步，心里倒能长久安生。' },
+      { who: '吴之祥', text: '可让也不是一味退。该守的公道还得守，别叫老实人吃亏。' },
+      { who: NAMES.tang, text: '肯让人，也肯替人撑住公道。二位这话，不是空谈。' },
+    ])
+    for (const npc of [wuZhihe, wuZhixiang]) {
+      ctx.interact({ pos: npc.position, radius: 2.2, verb: '听清谈', name: '吴氏兄弟', enabled: () => true, run: wuTalk })
+    }
+
     const flowerAt = new THREE.Vector3(STALL.x - 0.2, s.groundHeight(STALL.x - 0.2, STALL.z + 1.42) + 1.25, STALL.z + 1.42)
     ctx.interact({
       pos: duo.position, radius: 2.4, verb: '交谈', name: NAMES.duo, enabled: () => true,

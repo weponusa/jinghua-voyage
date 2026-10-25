@@ -2,9 +2,12 @@
  * Voyage progress rules and untrusted-save migration. Chapter unlocks stay linear, while each
  * island owns a small JSON checkpoint so refresh and model-style rebuilds never lose puzzle state.
  */
-export const CHAPTER_ORDER = ['junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai'] as const
+export const CHAPTER_ORDER = ['junzi', 'daren', 'wuchang', 'heichi', 'baimin', 'shushi', 'liangmian', 'qishe', 'nver', 'penglai'] as const
 export type ChapterId = (typeof CHAPTER_ORDER)[number]
-export const KINGDOMS: ChapterId[] = CHAPTER_ORDER.filter(id => id !== 'penglai')
+export const FLOWER_CHAPTERS = ['junzi', 'daren', 'wuchang', 'heichi', 'baimin', 'liangmian'] as const
+export const LEGACY_CHAPTER_ORDER = ['junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai'] as const
+/** @deprecated Use FLOWER_CHAPTERS. */
+export const KINGDOMS: readonly ChapterId[] = FLOWER_CHAPTERS
 
 export const JUNZI_LANDMARKS = ['dock', 'arch', 'market', 'courtesy', 'pavilion'] as const
 export type JunziProgress = { visited: string[]; haggleSolved: boolean; flowerCollected: boolean }
@@ -21,8 +24,13 @@ export const emptyChapterCheckpoint = (): ChapterCheckpoint => ({ solved: false,
 
 export type Progress = {
   completed: ChapterId[]
+  route: 'linear' | 'legacy'
   prologueSeen: boolean
+  prologueAct: number
+  seaEvents: string[]
   ending: boolean
+  endingChoice: 'stay' | 'return' | null
+  epilogueSeen: boolean
   junzi: JunziProgress
   chapters: Partial<Record<ChapterId, ChapterCheckpoint>>
   /** Last unfinished island; Continue returns here instead of losing the player's place. */
@@ -30,7 +38,19 @@ export type Progress = {
 }
 
 export function emptyProgress(): Progress {
-  return { completed: [], prologueSeen: false, ending: false, junzi: emptyJunzi(), chapters: {}, lastChapter: null }
+  return {
+    completed: [],
+    route: 'linear',
+    prologueSeen: false,
+    prologueAct: 0,
+    seaEvents: [],
+    ending: false,
+    endingChoice: null,
+    epilogueSeen: false,
+    junzi: emptyJunzi(),
+    chapters: {},
+    lastChapter: null,
+  }
 }
 
 export function isChapterId(v: unknown): v is ChapterId {
@@ -46,18 +66,24 @@ export const TEST_ALL_CHAPTERS = typeof window !== 'undefined' && new URLSearchP
 export function isUnlocked(p: Progress, id: ChapterId, playable: readonly ChapterId[] = PLAYABLE): boolean {
   if (!playable.includes(id)) return false
   if (TEST_ALL_CHAPTERS) return true
-  const index = CHAPTER_ORDER.indexOf(id)
+  const order: readonly ChapterId[] = p.route === 'legacy' ? LEGACY_CHAPTER_ORDER : CHAPTER_ORDER
+  const index = order.indexOf(id)
+  if (p.route === 'legacy' && index < 0) return true
   if (index <= 0) return true
-  return CHAPTER_ORDER.slice(0, index).every(prev => p.completed.includes(prev))
+  return order.slice(0, index).every(prev => p.completed.includes(prev))
 }
 
 export function isCompleted(p: Progress, id: ChapterId): boolean { return p.completed.includes(id) }
 
 export function nextChapter(p: Progress, playable: readonly ChapterId[] = PLAYABLE): ChapterId | null {
-  return CHAPTER_ORDER.find(id => isUnlocked(p, id, playable) && !isCompleted(p, id)) ?? null
+  const legacyAdditions = CHAPTER_ORDER.filter(id => !(LEGACY_CHAPTER_ORDER as readonly ChapterId[]).includes(id))
+  const order: readonly ChapterId[] = p.route === 'legacy' ? [...LEGACY_CHAPTER_ORDER, ...legacyAdditions] : CHAPTER_ORDER
+  return order.find(id => isUnlocked(p, id, playable) && !isCompleted(p, id)) ?? null
 }
 
-export function flowerCount(p: Progress): number { return TEST_ALL_CHAPTERS ? 6 : KINGDOMS.filter(id => p.completed.includes(id)).length }
+export function flowerCount(p: Progress): number {
+  return TEST_ALL_CHAPTERS ? 6 : FLOWER_CHAPTERS.filter(id => p.completed.includes(id) || chapterCheckpoint(p, id).flowerCollected).length
+}
 
 export function completeChapter(p: Progress, id: ChapterId, playable: readonly ChapterId[] = PLAYABLE): { progress: Progress; firstTime: boolean } {
   if (!isUnlocked(p, id, playable)) return { progress: p, firstTime: false }
@@ -85,7 +111,7 @@ function checkpointValue(raw: unknown): CheckpointValue | undefined {
   return undefined
 }
 
-function parseCheckpoint(raw: unknown, completed: boolean, finale = false): ChapterCheckpoint {
+function parseCheckpoint(raw: unknown, completed: boolean, id: ChapterId): ChapterCheckpoint {
   const data = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
   const values: Record<string, CheckpointValue> = {}
   if (data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
@@ -95,7 +121,8 @@ function parseCheckpoint(raw: unknown, completed: boolean, finale = false): Chap
       if (value !== undefined) values[key] = value
     }
   }
-  const flowerCollected = !finale && (data.flowerCollected === true || completed)
+  const producesFlower = (FLOWER_CHAPTERS as readonly ChapterId[]).includes(id)
+  const flowerCollected = producesFlower && (data.flowerCollected === true || completed)
   return {
     solved: data.solved === true || flowerCollected || completed,
     flowerCollected,
@@ -106,11 +133,12 @@ function parseCheckpoint(raw: unknown, completed: boolean, finale = false): Chap
 
 export function chapterCheckpoint(p: Progress, id: ChapterId): ChapterCheckpoint {
   if (id === 'junzi') return { solved: p.junzi.haggleSolved, flowerCollected: p.junzi.flowerCollected, visited: p.junzi.visited, data: {} }
-  return p.chapters[id] ?? parseCheckpoint(null, p.completed.includes(id), id === 'penglai')
+  return p.chapters[id] ?? parseCheckpoint(null, p.completed.includes(id), id)
 }
 
-export function parseProgress(raw: unknown): Progress {
+export function parseProgress(raw: unknown, forcedRoute?: 'linear' | 'legacy'): Progress {
   const base = emptyProgress()
+  if (forcedRoute) base.route = forcedRoute
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return base
   const data = raw as Record<string, unknown>
   const completed = Array.isArray(data.completed) ? [...new Set(data.completed.filter(isChapterId))] : []
@@ -122,12 +150,20 @@ export function parseProgress(raw: unknown): Progress {
   for (const id of CHAPTER_ORDER) {
     if (id === 'junzi') continue
     const rawCheckpoint = (rawChapters as Record<string, unknown>)[id]
-    if (rawCheckpoint !== undefined || completed.includes(id)) chapters[id] = parseCheckpoint(rawCheckpoint, completed.includes(id), id === 'penglai')
+    if (rawCheckpoint !== undefined || completed.includes(id)) chapters[id] = parseCheckpoint(rawCheckpoint, completed.includes(id), id)
   }
+  const prologueAct = typeof data.prologueAct === 'number' && Number.isFinite(data.prologueAct)
+    ? Math.min(3, Math.max(0, Math.trunc(data.prologueAct)))
+    : data.prologueSeen === true ? 3 : 0
   return {
     completed,
+    route: forcedRoute ?? (data.route === 'legacy' ? 'legacy' : 'linear'),
     prologueSeen: data.prologueSeen === true,
+    prologueAct,
+    seaEvents: Array.isArray(data.seaEvents) ? [...new Set(data.seaEvents.filter((v): v is string => typeof v === 'string'))] : [],
     ending: data.ending === true,
+    endingChoice: data.endingChoice === 'stay' || data.endingChoice === 'return' ? data.endingChoice : null,
+    epilogueSeen: data.epilogueSeen === true,
     junzi: { visited: [...new Set(visited)], haggleSolved: saved.haggleSolved === true || collected, flowerCollected: collected },
     chapters,
     lastChapter: isChapterId(data.lastChapter) ? data.lastChapter : null,

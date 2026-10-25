@@ -28,6 +28,9 @@ const OUTLINES: Record<ChapterId, readonly number[]> = {
   wuchang: [1.1, 1.16, 1.02, 0.93, 0.98, 1.12, 1.2, 1.04, 0.9, 0.98, 1.13, 1.08],
   baimin: [1.22, 1.1, 0.92, 0.84, 0.95, 1.1, 1.23, 1.08, 0.91, 0.82, 0.94, 1.12],
   heichi: [0.9, 1.19, 0.83, 1.24, 0.85, 1.16, 0.91, 1.22, 0.82, 1.17, 0.88, 1.23],
+  shushi: [0.88, 1.12, 1.2, 0.82, 1.06, 0.93, 1.18, 0.86, 1.1, 0.96, 1.21, 0.9],
+  qishe: [1.16, 0.9, 1.06, 1.22, 0.85, 1.12, 0.94, 1.2, 0.88, 1.15, 0.98, 1.08],
+  nver: [0.96, 1.2, 0.86, 1.1, 1.18, 0.92, 1.04, 1.22, 0.84, 1.14, 0.95, 1.16],
   penglai: [1.1, 0.98, 1.17, 0.91, 1.08, 1.2, 0.94, 1.08, 1.2, 0.92, 1.13, 1.03],
 }
 
@@ -38,6 +41,9 @@ const COLORS: Record<ChapterId, IslandColors> = {
   wuchang: { grass: '#9aa85e', sand: '#c68e43', cliff: '#42766d', path: '#d8b56d', accent: '#c99935' },
   baimin: { grass: '#9bbd9d', sand: '#d0aa72', cliff: '#5d8c88', path: '#e5d6b4', accent: '#f6f0de' },
   heichi: { grass: '#3d625d', sand: '#9b724e', cliff: '#253f46', path: '#b89564', accent: '#d6a84b' },
+  shushi: { grass: '#7c8769', sand: '#b29a73', cliff: '#536a67', path: '#c9b992', accent: '#8a947e' },
+  qishe: { grass: '#8e8c5d', sand: '#c38e5f', cliff: '#4f7274', path: '#d5b479', accent: '#d66b4d' },
+  nver: { grass: '#73927b', sand: '#c9a078', cliff: '#4c787c', path: '#d7c39d', accent: '#bd7086' },
   penglai: { grass: '#77a487', sand: '#ca9966', cliff: '#417d7a', path: '#d4c79e', accent: '#82bfc0' },
 }
 
@@ -147,6 +153,15 @@ function buildPortrait(scene: THREE.Scene, id: ChapterId, models: PortraitModels
       break
     case 'heichi':
       buildHeichi(island, colors, models, owned)
+      break
+    case 'shushi':
+      buildBaimin(island, colors, models, owned)
+      break
+    case 'qishe':
+      buildHeichi(island, colors, models, owned)
+      break
+    case 'nver':
+      buildJunzi(island, colors, models, owned)
       break
     case 'penglai':
       buildPenglai(island, colors, models, owned)

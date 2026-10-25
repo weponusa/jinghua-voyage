@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-before-*/
 shots/
+.work/
 .DS_Store
 __pycache__/
 *.pyc
