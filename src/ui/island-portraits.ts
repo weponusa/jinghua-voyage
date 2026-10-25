@@ -5,14 +5,19 @@ import { CHAPTER_ORDER, type ChapterId } from '../game/progress'
 /** Transparent PNG portraits keyed by the sea-chart chapter IDs. */
 export type IslandPortraits = Partial<Record<ChapterId, string>>
 
-type PortraitModelKey = Extract<ModelKey, 'paifang' | 'market_stall' | 'peach_tree' | 'pavilion' | 'house' | 'tree_pineRoundA' | 'rock_smallA'>
+type PortraitModelKey = ModelKey
 type PortraitModels = Partial<Record<PortraitModelKey, THREE.Object3D>>
 type OwnedResources = { geometries: Set<THREE.BufferGeometry>; materials: Set<THREE.Material> }
 type IslandColors = { grass: string; sand: string; cliff: string; path: string; accent: string }
 type ModelPlacement = { x: number; y: number; z: number; yaw?: number; height?: number; span?: number }
 
-const PORTRAIT_SIZE = 384
-const MODEL_KEYS: readonly PortraitModelKey[] = ['paifang', 'market_stall', 'peach_tree', 'pavilion', 'house', 'tree_pineRoundA', 'rock_smallA']
+const PORTRAIT_SIZE = 768
+const MODEL_KEYS: readonly PortraitModelKey[] = [
+  'paifang', 'market_stall', 'peach_tree', 'pavilion', 'house', 'chinese_pine', 'willow', 'bamboo',
+  'mirror_terrace', 'riddle_rack', 'food_stove', 'arch_bridge', 'desk_books', 'rock_tallB', 'rock_smallA',
+  'cloud_gate', 'twin_screen', 'banquet_house', 'academy_hall', 'library_tower',
+  'plant_bush', 'plant_bushLarge', 'flower_redA', 'flower_yellowA',
+]
 
 // These deliberately uneven outlines give each kingdom a recognisable coastline rather than a
 // reused circular pedestal. They contain no random input, so captures are stable across visits.
@@ -110,10 +115,10 @@ async function loadPortraitModels(): Promise<PortraitModels> {
 }
 
 function portraitCamera(): THREE.OrthographicCamera {
-  const extent = 7.7
+  const extent = 5.55
   const camera = new THREE.OrthographicCamera(-extent, extent, extent, -extent, 0.1, 80)
-  camera.position.set(10.5, 11.5, 12.5)
-  camera.lookAt(0, 0.4, 0)
+  camera.position.set(10.2, 8.8, 12.8)
+  camera.lookAt(0, 0.45, 0)
   camera.updateProjectionMatrix()
   return camera
 }
@@ -147,11 +152,29 @@ function buildPortrait(scene: THREE.Scene, id: ChapterId, models: PortraitModels
       buildPenglai(island, colors, models, owned)
       break
   }
+  addGroundCover(island, models, CHAPTER_ORDER.indexOf(id))
+}
+
+function addGroundCover(group: THREE.Group, models: PortraitModels, chapter: number): void {
+  const keys: PortraitModelKey[] = ['plant_bush', 'flower_redA', 'plant_bushLarge', 'flower_yellowA']
+  for (let i = 0; i < 12; i += 1) {
+    const angle = i * Math.PI * 2 / 12 + chapter * 0.17
+    const radius = i % 2 ? 3.45 : 3.75
+    const key = keys[(i + chapter) % keys.length]
+    const height = key.startsWith('flower') ? 0.25 : 0.38 + (i % 3) * 0.07
+    addModelOrFallback(group, models, key, {
+      x: Math.cos(angle) * radius,
+      y: 0.055,
+      z: Math.sin(angle) * radius * 0.68,
+      yaw: angle + chapter,
+      height,
+    }, () => new THREE.Group())
+  }
 }
 
 function addLightRig(scene: THREE.Scene): void {
-  scene.add(new THREE.HemisphereLight('#fff7df', '#4e8881', 1.9))
-  const sun = new THREE.DirectionalLight('#ffe4b2', 3.2)
+  scene.add(new THREE.HemisphereLight('#fff7e8', '#3d706c', 1.08))
+  const sun = new THREE.DirectionalLight('#ffe8c8', 1.9)
   sun.position.set(-7, 12, 8)
   sun.castShadow = true
   sun.shadow.mapSize.set(512, 512)
@@ -183,10 +206,12 @@ function makeIsland(id: ChapterId, colors: IslandColors, owned: OwnedResources):
 
 function pointsFor(id: ChapterId, xRadius: number, zRadius: number): THREE.Vector2[] {
   const radii = OUTLINES[id]
-  return radii.map((radius, index) => {
+  const controls = radii.map((radius, index) => {
     const angle = (index / radii.length) * Math.PI * 2 + (id === 'liangmian' ? Math.PI / 12 : 0)
-    return new THREE.Vector2(Math.cos(angle) * xRadius * radius, Math.sin(angle) * zRadius * radius)
+    return new THREE.Vector3(Math.cos(angle) * xRadius * radius, 0, Math.sin(angle) * zRadius * radius)
   })
+  const curve = new THREE.CatmullRomCurve3(controls, true, 'catmullrom', 0.32)
+  return curve.getPoints(71).slice(0, -1).map(p => new THREE.Vector2(p.x, p.z))
 }
 
 function makeIslandShell(points: THREE.Vector2[], topY: number, bottomY: number, topColor: string, cliffColor: string, owned: OwnedResources): THREE.Group {
@@ -258,6 +283,7 @@ function buildJunzi(group: THREE.Group, colors: IslandColors, models: PortraitMo
   addModelOrFallback(group, models, 'market_stall', { x: 1.95, y: 0.08, z: -0.92, yaw: -0.42, height: 1.45 }, () => stallFallback(owned, '#3b887c'))
   addModelOrFallback(group, models, 'peach_tree', { x: -2.35, y: 0.08, z: -1.15, yaw: 0.45, height: 2.45 }, () => peachFallback(owned))
   addModelOrFallback(group, models, 'peach_tree', { x: 0.55, y: 0.08, z: 1.76, yaw: -0.4, height: 1.7 }, () => peachFallback(owned), 0.7)
+  addModelOrFallback(group, models, 'chinese_pine', { x: 2.65, y: 0.08, z: 1.18, yaw: 0.7, height: 2.15 }, () => pineFallback(owned, '#386b56'))
   addRock(group, owned, -3.15, 0.12, 1.28, 0.38, colors.cliff)
 }
 
@@ -271,22 +297,17 @@ function buildDaren(group: THREE.Group, colors: IslandColors, models: PortraitMo
     puff.scale.y = 0.48
     group.add(puff)
   }
-  const tower = steppedTower(owned, colors.accent)
-  tower.position.set(0.05, 0.09, -0.18)
-  group.add(tower)
-  addModelOrFallback(group, models, 'pavilion', { x: 1.95, y: 0.08, z: 1.18, yaw: -0.48, height: 1.7 }, () => pavilionFallback(owned, '#7560a2'))
+  addModelOrFallback(group, models, 'cloud_gate', { x: 0.05, y: 0.08, z: -0.28, yaw: -0.12, height: 3.25 }, () => steppedTower(owned, colors.accent))
+  addModelOrFallback(group, models, 'chinese_pine', { x: -2.65, y: 0.08, z: -0.72, yaw: 0.3, height: 2.25 }, () => pineFallback(owned, '#426d62'))
   addRock(group, owned, -2.25, 0.1, 1.2, 0.42, '#597b80')
 }
 
 function buildLiangmian(group: THREE.Group, colors: IslandColors, models: PortraitModels, owned: OwnedResources): void {
-  addModelOrFallback(group, models, 'house', { x: -1.62, y: 0.08, z: 0.25, yaw: -Math.PI * 0.32, height: 2.0 }, () => houseFallback(owned, '#e3d5b4', '#a8493c'))
-  addModelOrFallback(group, models, 'house', { x: 1.64, y: 0.08, z: -0.3, yaw: Math.PI * 0.68, height: 2.0 }, () => houseFallback(owned, '#cfbf9c', '#3b6470'))
-  const masks = [
-    { x: -1.62, z: 1.23, color: '#f0dfbc', flip: 1 },
-    { x: 1.64, z: -1.26, color: '#864f47', flip: -1 },
-  ]
-  for (const mask of masks) addMask(group, owned, mask.x, 1.52, mask.z, mask.color, mask.flip)
-  addTwinRidges(group, owned, colors.cliff)
+  addModelOrFallback(group, models, 'twin_screen', { x: 0, y: 0.08, z: -0.72, yaw: 0.08, height: 2.5 }, () => houseFallback(owned, '#cfbf9c', '#a8493c'))
+  addModelOrFallback(group, models, 'paifang', { x: 0.05, y: 0.08, z: 1.55, yaw: 0.04, height: 1.85 }, () => gateFallback(owned, '#315e5e', '#c7a867'))
+  addModelOrFallback(group, models, 'bamboo', { x: 0.1, y: 0.08, z: -1.9, yaw: 0.4, height: 2.25 }, () => pineFallback(owned, '#4b7256'))
+  addModelOrFallback(group, models, 'rock_tallB', { x: -3.0, y: 0.08, z: -1.35, yaw: 0.3, height: 1.25 }, () => rockFallback(owned, colors.cliff, 0.65))
+  addModelOrFallback(group, models, 'rock_tallB', { x: 3.05, y: 0.08, z: 1.3, yaw: -0.25, height: 1.1 }, () => rockFallback(owned, colors.cliff, 0.58))
 }
 
 function buildWuchang(group: THREE.Group, colors: IslandColors, models: PortraitModels, owned: OwnedResources): void {
@@ -304,10 +325,10 @@ function buildWuchang(group: THREE.Group, colors: IslandColors, models: Portrait
     grain.rotation.y = -a
     group.add(grain)
   }
-  addModelOrFallback(group, models, 'house', { x: 1.25, y: 0.08, z: -0.56, yaw: 0.16, height: 1.95 }, () => granaryFallback(owned))
-  const chimney = ownedMesh(new THREE.CylinderGeometry(0.14, 0.19, 1.25, 6), standardMaterial('#8b6347', owned, { roughness: 1 }), owned)
-  chimney.position.set(2.0, 1.05, -0.66)
-  group.add(chimney)
+  addModelOrFallback(group, models, 'banquet_house', { x: 1.05, y: 0.08, z: -0.62, yaw: 0.16, height: 2.2 }, () => granaryFallback(owned))
+  addModelOrFallback(group, models, 'house', { x: -2.15, y: 0.08, z: 1.05, yaw: -0.45, height: 1.15 }, () => houseFallback(owned, '#b9aa8a', '#675d4c'))
+  addModelOrFallback(group, models, 'food_stove', { x: 1.15, y: 0.08, z: 1.05, yaw: -0.2, height: 0.68 }, () => granaryFallback(owned))
+  addModelOrFallback(group, models, 'willow', { x: -2.8, y: 0.08, z: -1.1, yaw: -0.4, height: 2.35 }, () => pineFallback(owned, '#6c8850'))
 }
 
 function buildBaimin(group: THREE.Group, colors: IslandColors, models: PortraitModels, owned: OwnedResources): void {
@@ -316,9 +337,10 @@ function buildBaimin(group: THREE.Group, colors: IslandColors, models: PortraitM
   const steps = ownedMesh(new THREE.BoxGeometry(3.45, 0.2, 1.55), standardMaterial('#e5dfd0', owned, { roughness: 1 }), owned)
   steps.position.set(0.15, 0.18, -0.22)
   group.add(steps)
-  addModelOrFallback(group, models, 'house', { x: 0.15, y: 0.28, z: -0.22, yaw: -0.06, height: 2.05 }, () => academyFallback(owned))
+  addModelOrFallback(group, models, 'academy_hall', { x: 0.15, y: 0.28, z: -0.22, yaw: -0.06, height: 2.35 }, () => academyFallback(owned))
+  addModelOrFallback(group, models, 'desk_books', { x: 0.25, y: 0.1, z: 1.25, yaw: -0.16, height: 0.62 }, () => academyFallback(owned))
   for (const [x, z, s] of [[-2.7, 1.25, 1], [2.75, 0.98, 0.86], [-2.15, -1.45, 0.72]] as const) {
-    addModelOrFallback(group, models, 'tree_pineRoundA', { x, y: 0.08, z, yaw: x * 0.8, height: 1.85 * s }, () => pineFallback(owned, '#426d62'))
+    addModelOrFallback(group, models, 'bamboo', { x, y: 0.08, z, yaw: x * 0.8, height: 2.0 * s }, () => pineFallback(owned, '#426d62'))
   }
   addOpenBook(group, owned, 2.1, 0.3, -1.35, colors.accent)
 }
@@ -328,9 +350,11 @@ function buildHeichi(group: THREE.Group, colors: IslandColors, models: PortraitM
   for (const [x, z, scale] of [[-2.8, 0.72, 0.82], [-1.95, 1.55, 0.56], [2.63, -1.22, 0.7]] as const) {
     addModelOrFallback(group, models, 'rock_smallA', { x, y: 0.08, z, yaw: x, span: scale }, () => rockFallback(owned, '#304951', scale))
   }
-  addModelOrFallback(group, models, 'pavilion', { x: 0.72, y: 0.08, z: 0.18, yaw: 0.38, height: 2.05 }, () => lanternPavilionFallback(owned))
+  addModelOrFallback(group, models, 'library_tower', { x: 0.72, y: 0.08, z: 0.18, yaw: 0.38, height: 2.45 }, () => lanternPavilionFallback(owned))
+  addModelOrFallback(group, models, 'riddle_rack', { x: -1.35, y: 0.08, z: 0.2, yaw: -0.2, height: 1.3 }, () => lanternPavilionFallback(owned))
+  addModelOrFallback(group, models, 'arch_bridge', { x: -1.45, y: 0.08, z: -1.4, yaw: 0.25, span: 2.0 }, () => rockFallback(owned, '#87938a', 0.6))
   addLantern(group, owned, 0.72, 2.0, 0.72, colors.accent)
-  addModelOrFallback(group, models, 'tree_pineRoundA', { x: 2.7, y: 0.08, z: 1.28, yaw: 1.2, height: 1.42 }, () => pineFallback(owned, '#233f43'))
+  addModelOrFallback(group, models, 'willow', { x: 2.7, y: 0.08, z: 1.28, yaw: 1.2, height: 1.85 }, () => pineFallback(owned, '#233f43'))
 }
 
 function buildPenglai(group: THREE.Group, colors: IslandColors, models: PortraitModels, owned: OwnedResources): void {
@@ -339,11 +363,10 @@ function buildPenglai(group: THREE.Group, colors: IslandColors, models: Portrait
     { x: 0.18, z: -0.38, r: 1.46, h: 4.3 },
     { x: 2.12, z: 0.94, r: 1.12, h: 3.05 },
   ]
-  for (const peak of peaks) steppedPeak(group, owned, peak.x, peak.z, peak.r, peak.h, colors.cliff)
-  const terrace = mirrorTerrace(owned, colors.accent)
-  terrace.position.set(0.15, 0.22, 1.6)
-  group.add(terrace)
-  addModelOrFallback(group, models, 'pavilion', { x: -2.7, y: 0.1, z: -0.95, yaw: -0.36, height: 1.32 }, () => pavilionFallback(owned, '#497e77'))
+  for (const peak of peaks) addModelOrFallback(group, models, 'rock_tallB', { x: peak.x, y: 0.08, z: peak.z, yaw: peak.x * 0.4, height: peak.h * 0.72 }, () => rockFallback(owned, colors.cliff, peak.r))
+  addModelOrFallback(group, models, 'mirror_terrace', { x: 0.15, y: 0.12, z: 1.6, yaw: 0.08, height: 1.55 }, () => mirrorTerrace(owned, colors.accent))
+  addModelOrFallback(group, models, 'chinese_pine', { x: -2.7, y: 0.1, z: -0.95, yaw: -0.36, height: 1.75 }, () => pineFallback(owned, '#497e77'))
+  addModelOrFallback(group, models, 'peach_tree', { x: 2.7, y: 0.08, z: 0.35, yaw: 0.5, height: 1.75 }, () => peachFallback(owned))
   for (const [x, z] of [[-3.05, 1.7], [2.95, -1.2]] as const) addRock(group, owned, x, 0.12, z, 0.42, colors.cliff)
 }
 
@@ -568,29 +591,6 @@ function steppedTower(owned: OwnedResources, accent: string): THREE.Group {
   return group
 }
 
-function addMask(group: THREE.Group, owned: OwnedResources, x: number, y: number, z: number, color: string, flip: number): void {
-  const face = ownedMesh(new THREE.SphereGeometry(0.34, 10, 7), standardMaterial(color, owned, { flatShading: true }), owned)
-  face.position.set(x, y, z)
-  face.scale.set(0.76, 1.06, 0.34)
-  face.rotation.y = flip * 0.2
-  group.add(face)
-  const eyeMaterial = standardMaterial('#312b2d', owned, { roughness: 1 })
-  for (const dx of [-0.1, 0.1]) {
-    const eye = ownedMesh(new THREE.SphereGeometry(0.045, 6, 5), eyeMaterial, owned)
-    eye.position.set(x + dx, y + 0.07, z + flip * 0.125)
-    group.add(eye)
-  }
-}
-
-function addTwinRidges(group: THREE.Group, owned: OwnedResources, color: string): void {
-  for (const [x, z, rot] of [[-2.65, -1.25, 0.3], [2.62, 1.28, -0.25]] as const) {
-    const ridge = ownedMesh(new THREE.ConeGeometry(0.78, 1.55, 5), standardMaterial(color, owned, { flatShading: true }), owned)
-    ridge.position.set(x, 0.82, z)
-    ridge.rotation.y = rot
-    group.add(ridge)
-  }
-}
-
 function grainSheaf(owned: OwnedResources, color: string): THREE.Group {
   const group = new THREE.Group()
   const gold = standardMaterial(color, owned, { flatShading: true, roughness: 0.9 })
@@ -618,20 +618,6 @@ function addLantern(group: THREE.Group, owned: OwnedResources, x: number, y: num
   const lamp = ownedMesh(new THREE.BoxGeometry(0.34, 0.48, 0.34), standardMaterial(color, owned, { emissive: color, emissiveIntensity: 0.45, roughness: 0.75 }), owned)
   lamp.position.set(x, y, z)
   group.add(lamp)
-}
-
-function steppedPeak(group: THREE.Group, owned: OwnedResources, x: number, z: number, radius: number, height: number, color: string): void {
-  const layers = [
-    { radius, height: height * 0.46, y: height * 0.23 },
-    { radius: radius * 0.71, height: height * 0.4, y: height * 0.56 },
-    { radius: radius * 0.39, height: height * 0.43, y: height * 0.86 },
-  ]
-  for (const layer of layers) {
-    const peak = ownedMesh(new THREE.ConeGeometry(layer.radius, layer.height, 6), standardMaterial(color, owned, { flatShading: true, roughness: 0.95 }), owned)
-    peak.position.set(x, layer.y + 0.08, z)
-    peak.rotation.y = (x + z) * 0.35
-    group.add(peak)
-  }
 }
 
 function mirrorTerrace(owned: OwnedResources, accent: string): THREE.Group {

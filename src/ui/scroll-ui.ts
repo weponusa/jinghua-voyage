@@ -2,15 +2,14 @@ import type { Audio } from '../engine/audio'
 import type { Input } from '../engine/input'
 import type { Quality, SaveData, SaveStore } from '../engine/save'
 import type { Line } from '../game/chapter'
-import { CHAPTER_ORDER, KINGDOMS, isCompleted, isPlayable, isUnlocked, nextChapter, type ChapterId } from '../game/progress'
+import { CHAPTER_ORDER, KINGDOMS, TEST_ALL_CHAPTERS, isCompleted, isPlayable, isUnlocked, nextChapter, type ChapterId } from '../game/progress'
 import { CHAPTERS } from '../game/story'
 import type { NavigationSnapshot } from '../game/navigation'
 import type { VoyageUi } from '../game/voyage'
 import { LocalMapRenderer } from './local-map'
 import { renderSeaChart } from './sea-chart'
-import type { IslandPortraits } from './island-portraits'
-import titleCover from '../../assets/share/cover-jinghua-20261019.png?url'
-import portraitCover from '../../assets/share/title-jinghua-20261019.png?url'
+import titleCover from '../../assets/share/cover-jinghua-full.png?url'
+import portraitCover from '../../assets/share/title-jinghua-full.png?url'
 
 export type Screen = 'boot' | 'title' | 'hud' | 'pause' | 'settings'
 
@@ -51,8 +50,6 @@ export class Ui implements VoyageUi {
   private lastPrompt = ''
   private navigationSnapshot: NavigationSnapshot | null = null
   private readonly mapRenderer = new LocalMapRenderer()
-  private islandPortraits: IslandPortraits = {}
-  private islandPortraitTask: Promise<IslandPortraits> | null = null
 
   constructor(private readonly save: SaveStore, private readonly audio: Audio, private readonly input: Input, private readonly actions: UiActions) {
     this.root = document.getElementById('ui')!
@@ -101,9 +98,14 @@ export class Ui implements VoyageUi {
     const p = this.save.data.progress
     const started = p.prologueSeen || p.completed.length > 0
     this.q('[data-action="start"] span').textContent = started ? '继续航程' : '扬帆启程'
+    const next = nextChapter(p)
+    if (TEST_ALL_CHAPTERS) {
+      this.q('.title-status').textContent = '测试模式 · 六枚镜花 · 七章全部开放 · 独立测试存档'
+      return
+    }
     this.q('.title-status').textContent = started
-      ? `第一章 · 君子国 ${p.completed.includes('junzi') ? '已完成，可重游' : '已开放'} · 其余章节制作中`
-      : '第一章 · 君子国已开放 · 进度自动保存'
+      ? next ? `已收镜花 ${p.completed.filter(id => id !== 'penglai').length}/6 · 下一站 ${CHAPTERS[next].name} · 进度自动保存` : '七章已圆满 · 可展开航海图随时重游'
+      : '七章完整航程 · 从君子国扬帆启程 · 进度自动保存'
   }
 
   // ─── HUD ────────────────────────────────────────────────────────────────
@@ -192,14 +194,12 @@ export class Ui implements VoyageUi {
   }
 
   private advance(): void {
+    this.audio.play('page')
     if (this.typing) {
       this.finishTyping()
       return
     }
-    if (this.dialogResolve) {
-      this.audio.play('ui')
-      this.dialogResolve()
-    }
+    if (this.dialogResolve) this.dialogResolve()
   }
 
   async choose(who: string, text: string, options: string[]): Promise<number> {
@@ -234,45 +234,35 @@ export class Ui implements VoyageUi {
     const el = this.q('.chart')
     const p = this.save.data.progress
     let selected: ChapterId = nextChapter(p) ?? 'junzi'
-    let closed = false
     const paintMap = () => {
       const sea = this.q('.chart-sea')
       const scrollTop = sea.scrollTop
       const focused = (document.activeElement as HTMLElement | null)?.closest<HTMLButtonElement>('[data-port]')?.dataset.port
-      sea.innerHTML = renderSeaChart(p, selected, this.islandPortraits)
+      sea.innerHTML = renderSeaChart(p, selected)
       sea.scrollTop = scrollTop
       if (focused) sea.querySelector<HTMLButtonElement>(`[data-port="${focused}"]`)?.focus({ preventScroll: true })
     }
     const detail = () => {
       const m = CHAPTERS[selected]
       const locked = !isUnlocked(p, selected)
-      const playable = isPlayable(selected)
-      const stateLabel = isCompleted(p, selected) ? '已完成 · 可重游' : playable && !locked ? '已开放 · 可启航' : playable ? '尚待解锁' : '制作中 · 可查看介绍'
+      const stateLabel = isCompleted(p, selected) ? '已完成 · 可重游' : locked ? '尚待解锁' : '已开放 · 可启航'
       this.q('.chart-detail').innerHTML = `
         <div class="cd-order">${m.order === '终' ? '终章' : `第${m.order}章`} · ${stateLabel}</div>
         <h3>${m.name}<small>${m.tagline}</small></h3>
         <p>${m.blurb}</p>
         ${isCompleted(p, selected) ? `<p class="cd-moral">所悟：${m.moral}</p>` : ''}
         ${selected === 'junzi' ? `<p class="cd-log">见闻 ${p.junzi.visited.length}/5 · ${p.junzi.flowerCollected || isCompleted(p, selected) ? '镜花已得' : p.junzi.haggleSolved ? '市集公案已解' : '初访君子国'}</p>` : ''}
-        <p class="cd-build-note">${!playable ? '此国故事仍在制作，现可阅览介绍，暂不能启航。' : locked ? '完成前序章节后方可启航。' : '本作当前仅开放第一章。'}</p>
-        <button class="btn primary" data-action="sail" ${locked || !playable ? 'disabled' : ''}><span>${!playable ? '暂不可启航 · 制作中' : locked ? '尚未解锁' : isCompleted(p, selected) ? '重游此国' : '扬帆启航'}</span></button>`
+        <p class="cd-build-note">${locked ? '完成前序章节后方可启航。' : isCompleted(p, selected) ? '此国已圆满，可随时重游。' : '航程已开放，可从此处启航。'}</p>
+        <button class="btn primary" data-action="sail" ${locked ? 'disabled' : ''}><span>${locked ? '尚未解锁' : isCompleted(p, selected) ? '重游此国' : '扬帆启航'}</span></button>`
       paintMap()
       for (const b of this.qa<HTMLElement>('.port')) b.classList.toggle('is-selected', b.dataset.port === selected)
     }
     detail()
     el.classList.add('is-active')
     this.root.classList.add('is-map-open')
-    this.islandPortraitTask ??= import('./island-portraits')
-      .then(module => module.createIslandPortraits())
-      .then(portraits => (this.islandPortraits = portraits))
-      .catch(() => this.islandPortraits)
-    void this.islandPortraitTask.then(() => {
-      if (!closed && el.classList.contains('is-active')) paintMap()
-    })
     return new Promise<ChapterId | null>(resolve => {
       this.overlayResolve = v => {
         if (v === 'select') return
-        closed = true
         el.classList.remove('is-active')
         this.root.classList.remove('is-map-open')
         this.overlayResolve = null
@@ -298,7 +288,7 @@ export class Ui implements VoyageUi {
       return Promise.resolve(null)
     }
     const el = this.q('.local-map')
-    this.q('.local-map header p').textContent = snapshot.map.id === 'hub' ? '海船 · 甲板' : '君子国 · 第一章'
+    this.q('.local-map header p').textContent = snapshot.map.id === 'hub' ? '海船 · 甲板' : `${CHAPTERS[snapshot.map.id as ChapterId].name} · 山海舆图`
     this.mapRenderer.open(this.q('.local-map-body'), snapshot)
     el.classList.add('is-active')
     this.root.classList.add('is-map-open')
@@ -321,11 +311,11 @@ export class Ui implements VoyageUi {
       <h2>${firstTime ? '得镜花一枚' : '重游已毕'}</h2>
       <p class="seal-name">${m.name} · ${m.tagline}</p>
       <p class="seal-moral">「${m.moral}」</p>
-      ${id === 'junzi' ? '<p class="seal-next">第一章已圆满 · 后续诸国制作中。可回到海船，随时重游。</p>' : firstTime && id !== 'heichi' ? `<p class="seal-next">新港口已在航海图上标出：${CHAPTERS[CHAPTER_ORDER[CHAPTER_ORDER.indexOf(id) + 1]].name}</p>` : ''}
+      ${firstTime && id !== 'heichi' ? `<p class="seal-next">新港口已在航海图上标出：${CHAPTERS[CHAPTER_ORDER[CHAPTER_ORDER.indexOf(id) + 1]].name}</p>` : ''}
       ${firstTime && id === 'heichi' ? '<p class="seal-next">六枚镜花已齐，海上仙山小蓬莱现于航海图。</p>' : ''}
       <button class="btn primary" data-action="overlay-ok"><span>返回海船</span></button>`
     el.classList.add('is-active')
-    this.audio.play('win')
+    this.audio.play('seal')
     return new Promise(resolve => {
       this.overlayResolve = () => {
         el.classList.remove('is-active')
@@ -351,7 +341,6 @@ export class Ui implements VoyageUi {
   // ─── settings ───────────────────────────────────────────────────────────
   refreshSettings(): void {
     const d = this.save.data
-    const modelStyle = (d as SaveData & { modelStyle?: 'detailed' | 'chibi' }).modelStyle ?? 'detailed'
     this.root.classList.toggle('is-reduced-motion', d.reducedMotion)
     const set = (name: string, v: number) => {
       const el = this.root.querySelector<HTMLInputElement>(`input[name="${name}"]`)
@@ -361,9 +350,9 @@ export class Ui implements VoyageUi {
     set('sfx', Math.round(d.sfxVolume * 100))
     set('sens', Math.round(d.sensitivity * 100))
     for (const b of this.qa<HTMLElement>('[data-quality]')) b.classList.toggle('is-on', b.dataset.quality === d.quality)
-    for (const b of this.qa<HTMLElement>('[data-model-style]')) b.classList.toggle('is-on', b.dataset.modelStyle === modelStyle)
     for (const [k, v] of [['muted', d.muted], ['invertY', d.invertY], ['reducedMotion', d.reducedMotion]] as const) {
       this.q(`[data-toggle="${k}"]`).classList.toggle('is-on', v)
+      this.q(`[data-toggle="${k}"]`).setAttribute('aria-pressed', String(v))
     }
   }
 
@@ -398,16 +387,6 @@ export class Ui implements VoyageUi {
       this.refreshSettings()
       return
     }
-    const modelStyle = t.closest<HTMLElement>('[data-model-style]')
-    if (modelStyle) {
-      const style = modelStyle.dataset.modelStyle as 'detailed' | 'chibi'
-      if (style && style !== (this.save.data as SaveData & { modelStyle?: string }).modelStyle) {
-        this.actions.settings({ modelStyle: style } as Partial<SaveData>)
-        this.toast('角色风格已切换，将重新进入场景。')
-      }
-      this.refreshSettings()
-      return
-    }
     const mapLandmark = t.closest<HTMLElement>('[data-map-landmark]')
     if (mapLandmark) {
       this.audio.play('ui')
@@ -429,6 +408,8 @@ export class Ui implements VoyageUi {
       case 'start': this.actions.start(); break
       case 'chart-title': this.actions.chartFromTitle(); break
       case 'settings': this.push('settings'); break
+      case 'sound-test': void this.audio.unlock().then(() => this.audio.play('seal')); break
+      case 'music-test': void this.audio.unlock().then(() => this.audio.previewScore()); break
       case 'back': this.back(); break
       case 'resume': this.actions.resume(); break
       case 'pause': this.actions.pause(); break
@@ -541,20 +522,26 @@ export class Ui implements VoyageUi {
   private template(): string {
     return `
 <section class="screen boot" data-screen="boot">
-  <div class="wave-mark">${WAVE_MARK_SVG}</div>
-  <p class="boot-title">镜花缘</p>
-  <div class="boot-bar"><i></i></div>
-  <p class="boot-tip">展卷中……</p>
+  <picture class="loading-art"><source media="(orientation: portrait)" srcset="${portraitCover}"/><img src="${titleCover}" alt=""/></picture>
+  <div class="loading-shade"></div>
+  <div class="boot-content">
+    <div class="loading-seal"><span>镜</span></div>
+    <p class="loading-kicker">海外奇游 · 七章画卷</p>
+    <div class="wave-mark">${WAVE_MARK_SVG}</div>
+    <p class="boot-title">镜花缘</p>
+    <div class="boot-bar"><i></i></div>
+    <p class="boot-tip">展卷中 · 山海渐明</p>
+  </div>
 </section>
 
 <section class="screen title has-key-art" data-screen="title">
-  <picture class="title-cover"><source media="(orientation: portrait)" srcset="${portraitCover}"/><img src="${titleCover}" alt="镜花缘 · 第一章君子国"/></picture>
+  <picture class="title-cover"><source media="(orientation: portrait)" srcset="${portraitCover}"/><img src="${titleCover}" alt="镜花缘 · 海外奇游"/></picture>
   <div class="title-col">
     <h1 class="logo-text">镜花缘</h1>
     <div class="title-seal">海外奇游</div>
   </div>
   <div class="title-menu">
-    <p class="tagline">随唐敖初访君子国，听市井让利，记海岛见闻。<br/>本作目前仅开放第一章；其余国家仍在制作中。</p>
+    <p class="tagline">随唐敖泛海远游，历六国风物，登小蓬莱仙境。<br/>七章完整航程，沿途见闻与进度自动保存。</p>
     <button class="btn primary" data-action="start"><span>扬帆启程</span></button>
     <button class="btn" data-action="chart-title"><span>航海图 · 选章</span></button>
     <button class="btn" data-action="settings"><span>设置</span></button>
@@ -600,8 +587,9 @@ export class Ui implements VoyageUi {
     <label class="row"><span>音效</span><input type="range" name="sfx" min="0" max="100"/></label>
     <label class="row"><span>视角灵敏度</span><input type="range" name="sens" min="20" max="300"/></label>
     <div class="row"><span>画质</span><div class="seg"><button data-quality="low">流畅</button><button data-quality="medium">均衡</button><button data-quality="high">精美</button></div></div>
-    <div class="row"><span>角色风格</span><div class="seg"><button data-model-style="detailed">写实</button><button data-model-style="chibi">Q版</button></div></div>
-    <div class="row"><span>静音</span><button class="toggle" data-toggle="muted"><i></i></button></div>
+    <div class="row"><span>静音</span><button class="toggle" data-toggle="muted" aria-label="切换静音" aria-pressed="false"><i></i></button><button class="btn small" data-action="sound-test"><span>试听音效</span></button></div>
+    <div class="row"><span>管弦配乐</span><button class="btn small" data-action="music-test"><span>试听主题曲</span></button></div>
+    <p class="sound-credit">原创主题编曲 · FluidR3 管弦采样（CC BY 3.0）</p>
     <div class="row"><span>视角上下反转</span><button class="toggle" data-toggle="invertY"><i></i></button></div>
     <div class="row"><span>减少动态效果</span><button class="toggle" data-toggle="reducedMotion"><i></i></button></div>
     <div class="row"><span>航程存档</span><button class="btn small danger" data-action="reset"><span>清除进度</span></button></div>
@@ -618,7 +606,7 @@ export class Ui implements VoyageUi {
 
 <div class="overlay chart">
   <div class="chart-paper" role="dialog" aria-modal="true" aria-label="镜花缘航海图">
-    <header><h2>镜花缘</h2><p>海上奇游 · 航海图</p><div class="chart-legend"><span class="is-open">已开放</span><span class="is-done">已完成</span><span class="is-soon">制作中</span></div><button class="icon-btn" data-action="chart-close" aria-label="关闭航海图"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
+    <header><h2>镜花缘</h2><p>海上奇游 · 航海图</p><div class="chart-legend"><span class="is-open">已开放</span><span class="is-done">已完成</span><span class="is-locked">待解锁</span></div><button class="icon-btn" data-action="chart-close" aria-label="关闭航海图"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
     <div class="chart-body">
       <div class="chart-sea"></div>
       <aside class="chart-detail"></aside>
@@ -628,7 +616,7 @@ export class Ui implements VoyageUi {
 
 <div class="overlay local-map">
   <div class="local-map-paper" role="dialog" aria-modal="true" aria-label="岛图">
-    <header><div><p>君子国 · 第一章</p><h2>山海舆图</h2></div><span class="local-map-hint">选择地标可设为辅助指引</span><button class="icon-btn" data-action="local-close" aria-label="关闭岛图"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
+    <header><div><p>海外奇游 · 山海舆图</p><h2>山海舆图</h2></div><span class="local-map-hint">选择地标可设为辅助指引</span><button class="icon-btn" data-action="local-close" aria-label="关闭岛图"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></header>
     <div class="local-map-body"></div>
   </div>
 </div>
@@ -645,7 +633,18 @@ export class Ui implements VoyageUi {
   </div>
 </div>
 
-<div class="veil"><div class="wave-mark wave-mark--small">${WAVE_MARK_SVG}</div><p class="veil-label"></p><div class="veil-bar"><i></i></div></div>
+<div class="veil">
+  <picture class="loading-art"><source media="(orientation: portrait)" srcset="${portraitCover}"/><img src="${titleCover}" alt=""/></picture>
+  <div class="loading-shade"></div>
+  <div class="veil-content">
+    <div class="loading-seal"><span>航</span></div>
+    <p class="loading-kicker">镜花缘 · 海上奇游</p>
+    <div class="wave-mark wave-mark--small">${WAVE_MARK_SVG}</div>
+    <p class="veil-label"></p>
+    <div class="veil-bar"><i></i></div>
+    <p class="veil-tip">山一程，水一程，风帆又起</p>
+  </div>
+</div>
 `
   }
 }

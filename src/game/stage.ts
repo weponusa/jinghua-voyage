@@ -48,8 +48,8 @@ export class Stage {
     scene.fog = new THREE.Fog(palette.fog, 55, 230)
 
     this.sky()
-    scene.add(new THREE.HemisphereLight('#fff6e4', new THREE.Color(palette.grass).multiplyScalar(0.55), 1.25))
-    this.sun = new THREE.DirectionalLight('#fff0d2', 2.6)
+    scene.add(new THREE.HemisphereLight('#fff6e8', new THREE.Color(palette.grass).multiplyScalar(0.48), 1.05))
+    this.sun = new THREE.DirectionalLight('#ffe8c4', 2.15)
     this.sun.castShadow = true
     this.sun.shadow.mapSize.set(shadowSize, shadowSize)
     const s = this.sun.shadow.camera
@@ -316,9 +316,10 @@ export class Stage {
     if (opts.foliage !== false) {
       const f = opts.foliage ?? {}
       plantMeadow(this.scene, island, radius, {
+        form: f.form,
         density: (f.density ?? 1) * this.detail,
-        grassBase: f.grassBase ?? grass.clone().multiplyScalar(0.82).getStyle(),
-        grassTip: f.grassTip ?? grass.clone().offsetHSL(0.015, 0.04, 0.1).getStyle(),
+        grassBase: f.grassBase ?? grass.clone().multiplyScalar(0.9).getStyle(),
+        grassTip: f.grassTip ?? grass.clone().offsetHSL(0.01, 0.025, 0.045).getStyle(),
         flowers: f.flowers ?? ['#f6f1e3', '#f2b6c6', '#f4d35e'],
         flowerRatio: f.flowerRatio,
         seed: f.seed ?? (opts.seed ?? 1) * 31,

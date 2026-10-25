@@ -4,7 +4,7 @@ import type { Physics } from '../engine/physics'
 import type { ModelKey } from './models'
 import type { Npc, NpcSpec } from './npc'
 import type { Player } from './player'
-import type { ChapterId, Progress, JunziProgress } from './progress'
+import type { ChapterId, Progress, JunziProgress, ChapterCheckpoint } from './progress'
 import { CHAPTERS } from './story'
 import { villager, type Palette, type Stage } from './stage'
 import { WATER_Y } from './terrain'
@@ -34,6 +34,9 @@ export interface Ctx {
   readonly hasFlower: boolean
   /** Save a first-chapter checkpoint without losing previously visited landmarks. */
   updateJunzi(patch: Partial<JunziProgress>): void
+  /** Current island's JSON checkpoint; update immediately after each meaningful action. */
+  readonly checkpoint: ChapterCheckpoint
+  updateCheckpoint(patch: Partial<ChapterCheckpoint>): void
   say(lines: Line[]): Promise<void>
   choose(who: string, text: string, options: string[]): Promise<number>
   /** Set the bottom quest line and (optionally) the world marker target. */

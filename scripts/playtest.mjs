@@ -7,6 +7,7 @@ import { chromium } from 'playwright'
 const url = process.env.URL ?? 'http://127.0.0.1:3000/'
 const out = process.env.SHOTS_DIR ?? 'shots'
 const mobile = process.env.MOBILE === '1'
+const testAll = new URL(url).searchParams.get('test') === '1'
 mkdirSync(out, { recursive: true })
 
 // [interactable name, scripted choice answers]
@@ -49,12 +50,17 @@ await waitFor(() => document.getElementById('ui')?.dataset.activeScreen === 'tit
 console.log(`title ready in ${Date.now() - t0} ms`)
 await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}00-title.png` })
 
-// Start: real click; the prologue plays on the deck.
-await page.click('[data-action="start"]')
+// Start with the same input method as the player; the prologue plays on the deck.
+if (mobile) await page.locator('[data-action="start"]').tap()
+else await page.click('[data-action="start"]')
 await page.waitForTimeout(1800)
 await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}01-prologue.png` })
-// Advance a few dialogue lines with real key presses.
-for (let i = 0; i < 3; i += 1) { await page.keyboard.press('Space'); await page.waitForTimeout(250); await page.keyboard.press('Space'); await page.waitForTimeout(150) }
+const advance = async () => {
+  if (mobile) await page.locator('.dialog').tap({ position: { x: 80, y: 40 } })
+  else await page.keyboard.press('Space')
+}
+// Advance a few dialogue lines with real key presses / touches.
+for (let i = 0; i < 3; i += 1) { await advance(); await page.waitForTimeout(250); await advance(); await page.waitForTimeout(150) }
 
 // From here on, dialogue auto-advances and choices follow the scripted answers.
 await page.evaluate(() => {
@@ -62,12 +68,10 @@ await page.evaluate(() => {
   g.answers = []
   g.ui.dialog = async () => {}
   g.ui.choose = async () => g.answers.shift() ?? 0
-  g.ui.seal = async () => {}
-  g.ui.ending = async () => {}
 })
 for (let i = 0; i < 40; i += 1) {
   if (await page.evaluate(() => window.__game.voyage.mode === 'explore')) break
-  await page.keyboard.press('Space')
+  await advance()
   await page.waitForTimeout(120)
 }
 await waitFor(() => window.__game.voyage.mode === 'explore', null, { timeout: 5_000 })
@@ -76,30 +80,93 @@ await waitFor(() => window.__game.voyage.mode === 'explore', null, { timeout: 5_
 const before = await page.evaluate(() => window.__game.voyage.debug().pos)
 const fps0 = await page.evaluate(() => new Promise(r => { let n = 0; const t = performance.now(); const f = () => (++n, performance.now() - t < 1000 ? requestAnimationFrame(f) : r(n)); requestAnimationFrame(f) }))
 console.log(`headless fps ≈ ${fps0}`)
-await page.keyboard.down('KeyS'); await page.waitForTimeout(2500); await page.keyboard.up('KeyS')
+if (mobile) {
+  // A real touch drag on the left side of the canvas drives the floating joystick.
+  const cdp = await context.newCDPSession(page)
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 120, y: 260, id: 1 }] })
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 120, y: 190, id: 1 }] })
+  await page.waitForTimeout(2200)
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.detach()
+} else {
+  await page.keyboard.down('KeyS'); await page.waitForTimeout(2500); await page.keyboard.up('KeyS')
+}
 const after = await page.evaluate(() => window.__game.voyage.debug().pos)
 const moved = Math.hypot(after.x - before.x, after.z - before.z)
-console.log(`walked ${moved.toFixed(2)} m`)
-if (moved < 0.5) errors.push('player did not move with S')
+console.log(`walked ${moved.toFixed(2)} m (${mobile ? 'touch joystick' : 'keyboard'})`)
+if (moved < 0.5) errors.push(`player did not move with ${mobile ? 'touch joystick' : 'S'}`)
+if (mobile && !(await page.evaluate(() => window.__game.input.method === 'touch' && document.body.classList.contains('is-touch')))) errors.push('touch controls did not activate')
 
 let n = 2
-const PLAYABLE = (process.env.CHAPTERS ?? 'junzi').split(',')
+const PLAYABLE = (process.env.CHAPTERS ?? 'junzi,daren,liangmian,wuchang,baimin,heichi,penglai').split(',')
 for (const [id, steps] of Object.entries(SOLUTIONS).filter(([id]) => PLAYABLE.includes(id))) {
   await page.evaluate(id => window.__game.voyage.enter(id), id)
   await waitFor(id => window.__game.voyage.sceneId === id && window.__game.voyage.mode === 'explore', id, { timeout: 30_000 })
   await page.waitForTimeout(600)
   await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-${id}.png` })
-  for (const [name, answers] of steps) {
-    const ok = await page.evaluate(async ([name, answers]) => {
-      const g = window.__game
-      g.answers = [...answers]
-      return g.voyage.debugInteract(name)
-    }, [name, answers])
-    if (!ok) errors.push(`${id}: could not interact with ${name}`)
+  if (id === 'liangmian') {
+    // Walk-round-the-back rule: stand on each NPC's local +Z side until the scarf lifts.
+    const folk = [[-4.2, -1.5, -Math.PI * 0.35], [-1.4, -4.6, -Math.PI * 0.1], [2.2, -4.2, Math.PI * 0.15], [4.6, -0.8, Math.PI * 0.4]]
+    for (const [x, z, yaw] of folk) {
+      await page.evaluate(([x, z, yaw]) => window.__game.voyage.debugTeleport(x + Math.sin(yaw) * 2, 1.2, z + Math.cos(yaw) * 2), [x, z, yaw])
+      await page.waitForTimeout(900)
+    }
+    const quest = await page.locator('.quest-text').textContent()
+    if (!quest?.includes('4/4') && !quest?.includes('去村口')) errors.push(`liangmian: back-face observation did not complete (${quest})`)
+  }
+  if (id === 'penglai' && !mobile) {
+    // The finale must be climbable with real movement, not only reachable by debug teleport.
+    await page.evaluate(() => { window.__game.voyage.debugTeleport(17, 1.2, 0); window.__game.voyage.active.cam.yaw = Math.PI / 2 })
+    await page.keyboard.down('KeyW')
+    await waitFor(() => window.__game.voyage.debug().pos.y >= 2.8, null, { timeout: 12_000 })
+    await page.keyboard.up('KeyW')
+    const lower = await page.evaluate(() => window.__game.voyage.debug().pos)
+    if (lower.y < 2.8) errors.push(`penglai: lower stair climb failed (y=${lower.y})`)
+    await page.evaluate(() => { window.__game.voyage.debugTeleport(-11, 3.4, 0); window.__game.voyage.active.cam.yaw = -Math.PI / 2 })
+    await page.keyboard.down('KeyW')
+    await waitFor(() => window.__game.voyage.debug().pos.y >= 5.1, null, { timeout: 12_000 })
+    await page.keyboard.up('KeyW')
+    const upper = await page.evaluate(() => window.__game.voyage.debug().pos)
+    if (upper.y < 5.1) errors.push(`penglai: upper stair climb failed (y=${upper.y})`)
+  }
+  // Test mode deliberately owns every flower, so Junzi's optional bargaining puzzle is disabled.
+  const chapterSteps = testAll && id === 'junzi' ? [] : steps
+  for (const [name, answers] of chapterSteps) {
+    if (id === 'penglai') {
+      const ok = await page.evaluate(([name, answers]) => {
+        const g = window.__game
+        g.answers = [...answers]
+        window.__endingRun = g.voyage.debugInteract(name)
+        return true
+      }, [name, answers])
+      if (!ok) errors.push(`${id}: could not interact with ${name}`)
+      await waitFor(() => document.querySelector('.ending')?.classList.contains('is-active'), null, { timeout: 10_000 })
+      await waitFor(() => Number(getComputedStyle(document.querySelector('.ending')).opacity) > 0.99, null, { timeout: 30_000 })
+      const endingLayout = await page.evaluate(() => {
+        const scroll = document.querySelector('.ending-scroll')
+        const button = scroll.querySelector('[data-action="overlay-ok"]').getBoundingClientRect()
+        const mini = document.querySelector('.mini-map-button')
+        const miniRect = mini.getBoundingClientRect()
+        const overMini = mini.getClientRects().length ? document.elementFromPoint(miniRect.x + miniRect.width / 2, miniRect.y + miniRect.height / 2) : null
+        return { entries: scroll.querySelectorAll('.ending-list li').length, fits: scroll.scrollHeight <= scroll.clientHeight + 2, buttonVisible: button.top >= 0 && button.bottom <= innerHeight, hudCovered: !overMini || !!overMini.closest('.ending') }
+      })
+      if (endingLayout.entries !== 6 || !endingLayout.fits || !endingLayout.buttonVisible || !endingLayout.hudCovered) errors.push(`ending layout invalid: ${JSON.stringify(endingLayout)}`)
+      await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-ending.png` })
+      if (mobile) await page.locator('.ending.is-active [data-action="overlay-ok"]').tap()
+      else await page.click('.ending.is-active [data-action="overlay-ok"]')
+      await page.evaluate(() => window.__endingRun)
+    } else {
+      const ok = await page.evaluate(async ([name, answers]) => {
+        const g = window.__game
+        g.answers = [...answers]
+        return g.voyage.debugInteract(name)
+      }, [name, answers])
+      if (!ok) errors.push(`${id}: could not interact with ${name}`)
+    }
     await page.waitForTimeout(120)
   }
   if (id === 'penglai') {
-    await waitFor(() => window.__game.voyage.sceneId === 'hub', null, { timeout: 30_000 })
+    await waitFor(() => window.__game.voyage.sceneId === 'hub', null, { timeout: 60_000 })
     break
   }
   const flower = await page.evaluate(() => window.__game.voyage.debugFlower())
@@ -110,16 +177,28 @@ for (const [id, steps] of Object.entries(SOLUTIONS).filter(([id]) => PLAYABLE.in
   await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-${id}-done.png` })
   const has = await page.evaluate(() => window.__game.voyage.debug().hasFlower)
   if (!has) errors.push(`${id}: flower not collected`)
-  await page.evaluate(() => window.__game.voyage.debugInteract('小舟'))
+  await page.evaluate(() => { window.__sealRun = window.__game.voyage.debugInteract('小舟'); return true })
+  await waitFor(() => document.querySelector('.seal')?.classList.contains('is-active'), null, { timeout: 10_000 })
+  await page.waitForTimeout(450)
+  await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-${id}-seal.png` })
+  if (mobile) await page.locator('.seal.is-active [data-action="overlay-ok"]').tap()
+  else await page.click('.seal.is-active [data-action="overlay-ok"]')
+  await page.evaluate(() => window.__sealRun)
   await waitFor(() => window.__game.voyage.sceneId === 'hub' && window.__game.voyage.mode === 'explore', null, { timeout: 30_000 })
 }
 const progress = await page.evaluate(() => window.__game.save.data.progress.completed)
 console.log('completed:', progress.join(','))
 if (progress.length !== PLAYABLE.length) errors.push(`expected ${PLAYABLE.length} completed chapters, got ${progress.length}`)
 
-// Chart overlay with everything done.
+// Chart overlay with everything done. The finale may still be fading back into the hub.
+await waitFor(() => window.__game.voyage.sceneId === 'hub' && window.__game.voyage.mode === 'explore', null, { timeout: 30_000 })
 await page.evaluate(() => { void window.__game.voyage.openChart() })
-await page.waitForTimeout(700)
+await waitFor(() => document.querySelector('.chart')?.classList.contains('is-active'), null, { timeout: 5_000 })
+await waitFor(() => Number(getComputedStyle(document.querySelector('.chart')).opacity) > 0.99, null, { timeout: 30_000 })
+await page.waitForFunction(() => {
+  const images = [...document.querySelectorAll('.chart-sea .port.has-portrait img.island-portrait')]
+  return images.length === 7 && images.every(image => image.complete && image.naturalWidth >= 300)
+}, null, { timeout: 60_000 })
 await page.screenshot({ path: `${out}/${mobile ? 'm-' : ''}${String(n++).padStart(2, '0')}-chart.png` })
 await page.keyboard.press('Escape')
 

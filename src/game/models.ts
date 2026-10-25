@@ -16,10 +16,13 @@ export type CharKey =
 export type PropKey =
   | 'junk_ship' | 'pavilion' | 'paifang' | 'market_stall' | 'house' | 'chinese_pine' | 'peach_tree' | 'willow' | 'arch_bridge'
   | 'stone_lantern' | 'bamboo' | 'taihu_rock' | 'small_boat' | 'lantern_post' | 'desk_books' | 'food_stove' | 'riddle_rack'
-  | 'mirror_terrace' | 'lotus'
+  | 'mirror_terrace' | 'lotus' | 'cloud_gate' | 'twin_screen' | 'banquet_house' | 'academy_hall' | 'library_tower'
+  | 'sky_palm' | 'stern_cypress' | 'amber_tree' | 'scholar_oak' | 'fairy_tree'
 type KitKey =
   | 'rock_largeA' | 'rock_largeC' | 'rock_tallB' | 'rock_smallA' | 'stone_tallC' | 'stone_largeB' | 'plant_bush' | 'plant_bushLarge'
   | 'lily_large' | 'log' | 'pot_large' | 'stump_round' | 'canoe' | 'tree_pineRoundA' | 'tree_pineTallA' | 'tree_oak' | 'tree_default'
+  | 'tree_fat' | 'tree_cone' | 'tree_palmTall' | 'tree_palmBend' | 'tree_pineRoundC' | 'tree_blocks_fall'
+  | 'flower_purpleA' | 'flower_yellowA' | 'flower_redA' | 'grass' | 'grass_large' | 'mushroom_redGroup' | 'bridge_wood' | 'fence_simple'
 export type ModelKey = CharKey | PropKey | KitKey
 
 type Spec = {
@@ -41,28 +44,33 @@ const KIT = (name: string, scale = 3): Spec => ({ path: `nature/${name}.glb`, sc
 export const MODELS: Record<ModelKey, Spec> = {
   tangao: CHAR('tangao', 1.78),
   linzhiyang: CHAR('linzhiyang', 1.72),
-  duojiugong: CHAR('duojiugong', 1.7),
+  duojiugong: CHAR('duojiugong', 1.7, Math.PI),
   seller: CHAR('seller', 1.76),
   buyer: CHAR('buyer', 1.74),
   elder: CHAR('elder', 1.68),
-  daren: CHAR('daren', 2.5),
-  official: CHAR('official', 1.85),
-  granny: CHAR('granny', 1.5),
-  child: CHAR('child', 1.2),
+  daren: CHAR('daren', 2.5, Math.PI),
+  official: CHAR('official', 1.85, Math.PI),
+  granny: CHAR('granny', 1.5, Math.PI),
+  child: CHAR('child', 1.2, Math.PI),
   oilseller: CHAR('oilseller', 1.72),
-  liangmian: CHAR('liangmian', 1.8),
-  miser: CHAR('miser', 1.7),
-  servant: CHAR('servant', 1.66),
-  scholar: CHAR('scholar', 1.86),
-  heichi_red: CHAR('heichi_red', 1.62),
-  heichi_purple: CHAR('heichi_purple', 1.6),
-  baihua: CHAR('baihua', 1.9),
+  liangmian: CHAR('liangmian', 1.8, Math.PI),
+  miser: CHAR('miser', 1.7, Math.PI),
+  servant: CHAR('servant', 1.66, Math.PI),
+  scholar: CHAR('scholar', 1.86, Math.PI),
+  heichi_red: CHAR('heichi_red', 1.62, Math.PI),
+  heichi_purple: CHAR('heichi_purple', 1.6, Math.PI),
+  baihua: CHAR('baihua', 1.9, Math.PI),
   junk_ship: { path: 'props/junk_ship.glb', length: 26 },
   pavilion: PROP('pavilion', 5.4),
   paifang: PROP('paifang', 6.2, Math.PI / 2),
   market_stall: PROP('market_stall', 3.1, -Math.PI / 2),
   house: PROP('house', 5, -Math.PI / 2),
   chinese_pine: PROP('chinese_pine', 6.5),
+  sky_palm: PROP('sky_palm', 7.2),
+  stern_cypress: PROP('stern_cypress', 6.2),
+  amber_tree: PROP('amber_tree', 5.5),
+  scholar_oak: PROP('scholar_oak', 5.8),
+  fairy_tree: PROP('fairy_tree', 6.1),
   peach_tree: PROP('peach_tree', 5.2),
   willow: PROP('willow', 6.5),
   arch_bridge: { path: 'props/arch_bridge.glb', length: 9 },
@@ -76,10 +84,20 @@ export const MODELS: Record<ModelKey, Spec> = {
   riddle_rack: PROP('riddle_rack', 3),
   mirror_terrace: PROP('mirror_terrace', 2.6),
   lotus: PROP('lotus', 0.7),
+  cloud_gate: PROP('cloud_gate', 6),
+  twin_screen: PROP('twin_screen', 4.5),
+  banquet_house: PROP('banquet_house', 5.5),
+  academy_hall: PROP('academy_hall', 5),
+  library_tower: PROP('library_tower', 7),
   rock_largeA: KIT('rock_largeA', 3), rock_largeC: KIT('rock_largeC', 3), rock_tallB: KIT('rock_tallB', 3), rock_smallA: KIT('rock_smallA', 3),
   stone_tallC: KIT('stone_tallC', 3), stone_largeB: KIT('stone_largeB', 3),
   plant_bush: KIT('plant_bush', 3), plant_bushLarge: KIT('plant_bushLarge', 3), lily_large: KIT('lily_large', 3), log: KIT('log', 3),
   tree_pineRoundA: KIT('tree_pineRoundA', 3.2), tree_pineTallA: KIT('tree_pineTallA', 3.2), tree_oak: KIT('tree_oak', 3.4), tree_default: KIT('tree_default', 3),
+  tree_fat: KIT('tree_fat', 3.2), tree_cone: KIT('tree_cone', 3.2), tree_palmTall: KIT('tree_palmTall', 3.2), tree_palmBend: KIT('tree_palmBend', 3.2),
+  tree_pineRoundC: KIT('tree_pineRoundC', 3.2), tree_blocks_fall: KIT('tree_blocks_fall', 3),
+  flower_purpleA: KIT('flower_purpleA', 2), flower_yellowA: KIT('flower_yellowA', 2), flower_redA: KIT('flower_redA', 2),
+  grass: KIT('grass', 2), grass_large: KIT('grass_large', 2), mushroom_redGroup: KIT('mushroom_redGroup', 2),
+  bridge_wood: KIT('bridge_wood', 3), fence_simple: KIT('fence_simple', 3),
   pot_large: KIT('pot_large', 3), stump_round: KIT('stump_round', 3), canoe: KIT('canoe', 3),
 }
 
@@ -95,13 +113,8 @@ export function hasModel(key: ModelKey): boolean {
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
 const cache = new Map<ModelKey, Promise<THREE.Object3D | null>>()
 
-let modelStyle: 'detailed' | 'chibi' = 'detailed'
-export const setModelStyle = (style: 'detailed' | 'chibi'): void => { modelStyle = style }
-
 /** Load (once) and normalise a model. Resolves to null when the file is missing or broken. */
 export function loadModel(key: ModelKey): Promise<THREE.Object3D | null> {
-  // Reuse the original game's paper-cut figures; buildings/terrain keep their existing assets.
-  if (modelStyle === 'chibi' && MODELS[key].path.startsWith('chars/')) return Promise.resolve(null)
   let pending = cache.get(key)
   if (!pending) {
     const spec = MODELS[key]
@@ -134,9 +147,10 @@ const STAND_IN: Partial<Record<ModelKey, ModelKey>> = {
 export async function instance(key: ModelKey): Promise<THREE.Object3D | null> {
   let base = await loadModel(key)
   const alt = STAND_IN[key]
+  const useAlt = !base && !!alt
   if (!base && alt) {
     base = await loadModel(alt)
-    if (base && !base.userData.toned) {
+    if (base && !base.userData.toned && !MODELS[key].path.startsWith('chars/')) {
       // Pull the bright catalog colours toward the ink-wash palette so stand-ins sit in the scene.
       const tone = new THREE.Color(alt.startsWith('tree') ? '#3f6b4c' : '#a39a88')
       base.traverse(o => {
@@ -148,6 +162,9 @@ export async function instance(key: ModelKey): Promise<THREE.Object3D | null> {
   }
   if (!base) return null
   const copy = base.clone(true)
+  if (useAlt && alt && MODELS[key].path.startsWith('chars/')) {
+    copy.scale.multiplyScalar((MODELS[key].height ?? 1.7) / (MODELS[alt].height ?? 1.7))
+  }
   copy.traverse(o => { o.userData.sharedModel = true })
   return copy
 }
@@ -172,6 +189,18 @@ function normalise(scene: THREE.Object3D, spec: Spec): THREE.Object3D {
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
     for (const m of mats) {
       const std = m as THREE.MeshStandardMaterial
+      if (spec.path.startsWith('nature/')) {
+        // The catalog's neon cyan "grass" and orange "dirt" made rocks and bushes read as
+        // metal crystals. Correct the shared source materials once, for every island.
+        const natural: Record<string, string> = {
+          grass: '#526b42', leafsDark: '#294d3d', leafsGreen: '#4f7549', leafsFall: '#a56f32',
+          dirt: '#807664', stone: '#8f9389', wood: '#76533a', woodBark: '#68503b',
+          woodBarkDark: '#4f4033', woodDark: '#594334', woodInner: '#b49a73',
+          colorRed: '#a84d45', colorYellow: '#c6a34d', colorPurple: '#8a719d',
+        }
+        const color = natural[std.name]
+        if (color) std.color.set(color)
+      }
       // Generated PBR often reads too metallic/glossy under stylised lighting.
       if (std.isMeshStandardMaterial) {
         std.metalness = Math.min(std.metalness, 0.15)

@@ -9,6 +9,10 @@ export const distanceLabel = (distance: number): string => {
 
 type MapRole = 'mini' | 'local'
 
+const PAINTED_MAPS = new Set(['hub', 'junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai'])
+export const paintedMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `/interface/map-${id}.webp` : null
+export const miniMapArtwork = (id: string): string | null => PAINTED_MAPS.has(id) ? `/interface/mini-${id}.webp` : null
+
 /**
  * Renders the chapter map from coordinates supplied by NavigationSnapshot. Terrain lines and
  * landmark controls only rebuild when the scene map changes; player/objective/tracking markers
@@ -95,14 +99,17 @@ export class LocalMapRenderer {
     }
     const coast = map.coast.length >= 3 ? `<polygon class="terrain-coast" points="${map.coast.map(point).join(' ')}"/>` : ''
     const paths = map.paths.map(path => `<polyline class="terrain-path" points="${path.map(point).join(' ')}"/>`).join('')
-    const illustration = map.illustration
-      ? `<image class="terrain-illustration" href="${esc(map.illustration)}" width="100" height="100" preserveAspectRatio="none"/>`
-      : `<g class="terrain-fallback">
+    const artwork = role === 'mini' ? miniMapArtwork(map.id) : paintedMapArtwork(map.id)
+    const illustration = artwork
+      ? `<image class="terrain-artwork" href="${artwork}" width="100" height="100" preserveAspectRatio="none"/>`
+      : map.illustration
+        ? `<image class="terrain-illustration" href="${esc(map.illustration)}" width="100" height="100" preserveAspectRatio="none"/>`
+        : `<g class="terrain-fallback">
           <rect width="100" height="100" class="terrain-fallback-paper"/>
           <path class="terrain-fallback-wash" d="M-8 22C16 13 30 28 48 20s32-4 60-17v35C85 51 69 39 48 48S15 42-8 54z"/>
           <path class="terrain-fallback-contour" d="M-5 27C18 17 29 33 49 24s34-3 57-15M-5 35C16 25 31 40 50 31s32-2 57-14M-5 65C18 55 30 70 49 61s35-2 57-14M-5 73C18 63 30 78 49 69s35-2 57-14"/>
         </g>`
-    return `<svg class="terrain-svg terrain-svg--${role}${map.illustration ? ' has-illustration' : ' is-fallback'}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    return `<svg class="terrain-svg terrain-svg--${role}${artwork ? ' has-artwork' : map.illustration ? ' has-illustration' : ' is-fallback'}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="mapWater-${role}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#cfe6dd"/><stop offset=".52" stop-color="#a9d1c7"/><stop offset="1" stop-color="#78b4b2"/></linearGradient>
         <linearGradient id="mapPaper-${role}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e5ead4"/><stop offset="1" stop-color="#b8d1ad"/></linearGradient>
@@ -118,12 +125,15 @@ export class LocalMapRenderer {
     const snapshot = this.snapshot
     if (!snapshot || !this.mini) return
     this.mini.style.setProperty('--map-aspect', this.aspectRatio(snapshot.map))
-    const marks = snapshot.map.landmarks.map(mark => `<i class="mini-landmark mini-landmark--${mark.kind}" style="${this.pointStyle(mark.x, mark.z)}"></i>`).join('')
-    this.mini.innerHTML = `${this.mapSvg(snapshot.map, 'mini')}
+    this.mini.classList.toggle('mini-map--hub', snapshot.map.id === 'hub')
+    const marks = snapshot.map.landmarks
+      .filter(mark => mark.kind === 'dock' || mark.kind === 'quest')
+      .map(mark => `<i class="mini-landmark mini-landmark--${mark.kind}" style="${this.pointStyle(mark.x, mark.z)}"></i>`).join('')
+    this.mini.innerHTML = `<div class="mini-map-field">${this.mapSvg(snapshot.map, 'mini')}
       <span class="map-north mini-north" aria-hidden="true">北</span>${marks}
       <i class="map-objective mini-objective" aria-hidden="true"></i>
       <i class="map-tracked mini-tracked" aria-hidden="true"></i>
-      <i class="map-player mini-player" aria-label="你的位置"></i>
+      <i class="map-player mini-player" aria-label="你的位置"></i></div>
       <span class="mini-readout"><span>任务 <b data-mini-objective-distance>—</b></span><span>指引 <b data-mini-tracked-distance>—</b></span></span>`
     this.miniMapId = snapshot.map.id
     this.miniIllustration = snapshot.map.illustration
@@ -160,10 +170,10 @@ export class LocalMapRenderer {
       const selected = mark.id === this.selectedId
       return `<button class="local-mark local-mark--${mark.kind}" data-map-landmark="${esc(mark.id)}" style="${this.pointStyle(mark.x, mark.z)}" aria-pressed="${selected}" aria-label="${esc(mark.name)}${visited ? '，已到访' : '，未到访'}"><i></i><span>${esc(mark.name)}</span></button>`
     }).join('')
-    this.full.innerHTML = `<div class="local-map-topline"><span class="map-north">北 ↑</span><span>${snapshot.map.illustration ? '实景俯视舆图' : '坐标舆图'}</span></div>
+    this.full.innerHTML = `<div class="local-map-topline"><span class="map-north">北 ↑</span><span>${paintedMapArtwork(snapshot.map.id) ? '手绘山海舆图 · 实景坐标' : snapshot.map.illustration ? '实景俯视舆图' : '坐标舆图'}</span></div>
       <div class="local-map-legend" aria-label="图例"><span class="legend-player">你的位置</span><span class="legend-objective">当前任务</span><span class="legend-tracked">辅助指引</span><span class="legend-landmark">地标</span></div>
       <div class="local-map-layout">
-        <section class="local-map-visual" style="--map-aspect:${this.aspectRatio(snapshot.map)}" aria-label="${esc(snapshot.map.title)}">
+        <section class="local-map-visual local-map-visual--${snapshot.map.id}" style="--map-aspect:${this.aspectRatio(snapshot.map)}" aria-label="${esc(snapshot.map.title)}">
           ${this.mapSvg(snapshot.map, 'local')}
           <i class="map-objective local-objective" aria-label="当前任务位置"></i>
           <i class="map-tracked local-tracked" aria-label="辅助指引位置"></i>
@@ -179,6 +189,9 @@ export class LocalMapRenderer {
   }
 
   private chapterState(snapshot: NavigationSnapshot): string {
+    if (snapshot.map.id === 'hub') {
+      return '<ul class="chapter-state"><li class="is-done"><i></i>图桌：选择已开放航线</li><li class="is-done"><i></i>同行人：靠近后交谈</li><li class="is-done"><i></i>北向坐标：对应实际甲板</li></ul>'
+    }
     const state = snapshot.chapter
     const items = [
       `<li class="${state.solved ? 'is-done' : ''}"><i></i>让利集评理：${state.solved ? '已明辨' : '尚待分说'}</li>`,
@@ -197,7 +210,7 @@ export class LocalMapRenderer {
     const selectedVisited = !!selected && snapshot.visited.includes(selected.id)
     detail.innerHTML = `<p class="map-eyebrow">${esc(snapshot.map.title)}</p>
       <h3>${selected ? esc(selected.name) : '地标'}</h3>
-      <p class="map-note">${selected ? (selectedVisited ? esc(selected.note) : '尚未到访；到达此处后可收录见闻。') : '选择一处地标查看行路提示。'}</p>
+      <p class="map-note">${selected ? (selectedVisited || snapshot.map.id === 'hub' ? esc(selected.note) : '尚未到访；到达此处后可收录见闻。') : '选择一处地标查看行路提示。'}</p>
       <p class="map-distance">${selected ? `距此 <b data-selected-distance>—</b>` : '—'}</p>
       <button class="btn small primary" data-action="local-guide" ${selected ? '' : 'disabled'}><span>设为指引</span></button>
       <p class="guide-note">设定后仅显示辅助方向，不会改变当前任务。</p>

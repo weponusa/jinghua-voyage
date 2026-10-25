@@ -42,7 +42,7 @@ async function advance(page) {
   }
   throw new Error('dialogue did not resolve')
 }
-async function sail(page) {
+async function sail(page, junziCompleted = false) {
   await page.click('[data-action="pause-chart"]')
   await page.waitForSelector('.chart.is-active')
   assert(await page.locator('.chart-sea .port').count() === 7, 'sea chart must preserve seven kingdom anchors')
@@ -61,7 +61,7 @@ async function sail(page) {
   assert(await page.locator('[data-action="sail"]').isDisabled(), 'final chapter must be readable but not playable')
   await page.locator('[data-port="daren"]').scrollIntoViewIfNeeded()
   await page.click('[data-port="daren"]')
-  assert(await page.locator('[data-action="sail"]').isDisabled(), 'unfinished second chapter must not be playable')
+  assert(await page.locator('[data-action="sail"]').isDisabled() === !junziCompleted, 'second chapter unlock state must follow first-chapter completion')
   await page.locator('[data-port="junzi"]').scrollIntoViewIfNeeded()
   await page.click('[data-port="junzi"]')
   await page.click('[data-action="sail"]')
@@ -186,7 +186,9 @@ try {
   await screenshot(page, '04-haggle')
   await page.click('[data-choice="0"]'); await advance(page)
   assert(await page.locator('.choice').count() === 4, 'wrong answer should allow another try')
-  await page.click('[data-choice="2"]'); await advance(page)
+  await page.click('[data-choice="2"]')
+  await page.evaluate(() => window.__game.voyage.debugTeleport(0, 1.2, 17))
+  await advance(page)
   assert(await page.evaluate(() => window.__game.save.data.progress.junzi.haggleSolved), 'riddle checkpoint not saved')
   // Refresh before picking up the flower: continue must restore the solved state and collectible.
   await page.reload(); await page.waitForSelector('[data-screen="title"].is-active', { timeout: 60_000 })
@@ -204,35 +206,22 @@ try {
   await page.keyboard.press('KeyM'); await screenshot(page, '06-journal'); await page.keyboard.press('KeyM')
   await hookInteract(page, '小舟')
   await page.waitForSelector('.seal.is-active')
-  assert((await page.locator('.seal-next').textContent()).includes('制作中'), 'completion should not falsely unlock second chapter')
+  assert((await page.locator('.seal-next').textContent()).includes('大人国'), 'completion should unlock the second chapter')
   await screenshot(page, '07-chapter-complete')
   await page.click('[data-action="overlay-ok"]')
   await page.waitForFunction(() => window.__game.voyage.sceneId === 'hub' && window.__game.voyage.mode === 'explore')
   assert((await page.evaluate(() => window.__game.save.data.progress.completed)).join(',') === 'junzi', 'chapter not completed exactly once')
-  await sail(page)
+  await sail(page, true)
   assert(!(await page.evaluate(() => window.__game.voyage.debugFlower())), 'replay should not create duplicate flowers')
   assert((await get(page)).hasFlower, 'completed replay must permit returning')
-  // Settings changes use the actual UI and rebuild the scene with the original lightweight figures.
+  // Settings retain a single detailed art pipeline; reopening must preserve the real rig.
   await page.keyboard.press('Escape'); await page.click('[data-screen="pause"] [data-action="settings"]')
-  await page.click('[data-model-style="chibi"]')
-  await page.waitForFunction(() => window.__game.voyage.mode === 'paused')
-  assert(await page.evaluate(() => window.__game.save.data.modelStyle === 'chibi'), 'Q-style preference not saved')
-  // Deliberately dispatch rapid requests during the transition to exercise last-request-wins.
-  await page.evaluate(() => {
-    document.querySelector('[data-model-style="detailed"]').click()
-    document.querySelector('[data-model-style="chibi"]').click()
-  })
-  await page.waitForFunction(() => !window.__game.voyage.styleChanging && window.__game.voyage.mode === 'paused')
-  assert(await page.evaluate(() => {
-    const a = window.__game.voyage.active; let shared = false
-    a.player.root.traverse(o => { if (o.userData.sharedModel && !o.isSkinnedMesh && o.isMesh) shared = true })
-    return window.__game.save.data.modelStyle === 'chibi' && !shared
-  }), 'rapid style switch did not keep last choice')
+  assert(await page.locator('[data-model-style]').count() === 0, 'removed character-style switch must stay absent')
   await page.keyboard.press('Escape'); await page.click('[data-action="resume"]')
-  assert((await rigPose(page)).count >= 1, 'Q-style must also retain a real skinned rig')
-  await screenshot(page, '08-chibi')
+  assert((await rigPose(page)).count >= 1, 'detailed model must retain a real skinned rig')
+  await screenshot(page, '08-detailed')
   await context.close()
-  console.log('smoke: desktop OK — real road, puzzle retry, save/reload, five observations, return, replay and rapid Q-style switching')
+  console.log('smoke: desktop OK — real road, puzzle retry, save/reload, five observations, return, replay and detailed skeletal rig')
   }
 
   const mobile = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
@@ -273,7 +262,7 @@ try {
   assert(await phone.evaluate(() => window.__game.save.data.progress.completed.length === 1), 'mobile chapter loop failed')
   await mobile.close()
   assert(errors.length === 0, `browser errors:\n${errors.join('\n')}`)
-  console.log('smoke: OK — road, puzzle retries, save/reload, five landmarks, pickup, return, replay, Q-style and mobile map verified')
+  console.log('smoke: OK — road, puzzle retries, save/reload, five landmarks, pickup, return, replay, detailed rig and mobile map verified')
   }
 } catch (error) {
   if (current && !current.isClosed()) {

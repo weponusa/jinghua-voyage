@@ -22,13 +22,16 @@ function text(value, maximum, required = false) {
   return value
 }
 function origin(value) {
+  if (typeof value !== 'string') fail('Game sharing publication URL is invalid; prepare sharing again')
+  const normalized = value.replace(/\/+$/, '')
   let parsed
-  try { parsed = new URL(value) } catch { fail('Game sharing publication URL is invalid; prepare sharing again') }
-  if (parsed.protocol !== 'https:' || parsed.origin !== value || parsed.username || parsed.password || parsed.port ||
+  try { parsed = new URL(normalized) } catch { fail('Game sharing publication URL is invalid; prepare sharing again') }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash ||
+      parsed.pathname.split('/').some(part => part === '.' || part === '..') ||
       !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(parsed.hostname) || /(?:^|\.)(?:localhost|local|internal)$/.test(parsed.hostname)) {
     fail('Game sharing publication URL is invalid; prepare sharing again')
   }
-  return parsed.origin
+  return normalized
 }
 function captions(value = {}) {
   exact(value, PLATFORMS)

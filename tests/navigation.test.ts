@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyProgress, parseProgress, updateJunzi, completeChapter } from '../src/game/progress'
 import { distanceTo, JUNZI_MAP, mapPercent } from '../src/game/navigation'
-import { defaultSave, parseSave } from '../src/engine/save'
+import { parseSave } from '../src/engine/save'
 
 describe('chapter-one checkpoints', () => {
   it('merges visited landmarks without losing solved state', () => {
@@ -27,9 +27,8 @@ describe('chapter-one checkpoints', () => {
     expect(parseProgress({ junzi: { visited: [null, 'arch', 'arch', 1], haggleSolved: 'true' } }).junzi).toEqual({ visited: ['arch'], haggleSolved: false, flowerCollected: false })
     expect(parseProgress({ junzi: null }).junzi).toEqual(emptyProgress().junzi)
   })
-  it('persists model style while retaining detailed mode for old saves', () => {
-    expect(parseSave(JSON.stringify({ version: 1, modelStyle: 'chibi' })).modelStyle).toBe('chibi')
-    expect(parseSave(JSON.stringify({ version: 1, modelStyle: 'invalid' })).modelStyle).toBe(defaultSave().modelStyle)
+  it('ignores the retired Q-style field when reading old saves', () => {
+    expect(parseSave(JSON.stringify({ version: 1, modelStyle: 'chibi' }))).not.toHaveProperty('modelStyle')
   })
 })
 describe('map coordinates', () => {

@@ -4,9 +4,10 @@ import { basename } from 'node:path'
 import { assembleThreejsShareSite, GameSharingValidationError } from './metadata.mjs'
 
 // Publication metadata is public project content; no runtime credentials are embedded here.
-const publicationOrigin = "https://shanhaiji-3kpnh3jb.manus.game"
+const publicationOrigin = "https://weponusa.github.io/jinghua-voyage"
+// GitHub Pages project sites include the repository name in their public path.
 const outputDirectory = "dist"
-const projectTitle = "海上拾花记"
+const projectTitle = "镜花缘"
 // Run the original script through the invoking package manager, preserving argument quoting.
 const packageManager = process.env.npm_execpath
 if (!packageManager) throw new Error('Run sharing through the package.json build script')

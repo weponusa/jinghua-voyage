@@ -6,7 +6,7 @@ import { Audio } from './engine/audio'
 import { Input } from './engine/input'
 import { GameLoop } from './engine/loop'
 import { SAVE_KEY, SaveStore, type SaveData } from './engine/save'
-import { emptyProgress } from './game/progress'
+import { emptyProgress, isUnlocked } from './game/progress'
 import type { Voyage } from './game/voyage'
 import { TouchControls } from './ui/touch'
 import { Ui } from './ui/scroll-ui'
@@ -23,6 +23,10 @@ async function boot(): Promise<void> {
   const input = new Input(canvas)
   if (navigator.maxTouchPoints > 0) input.method = 'touch'
   const audio = new Audio()
+  // Canvas gestures and keyboard input can unlock audio too; this also recovers an interrupted
+  // context after a phone call, lock screen, Bluetooth route change or a background tab.
+  window.addEventListener('pointerdown', () => { void audio.unlock() }, { capture: true, passive: true })
+  window.addEventListener('keydown', () => { void audio.unlock() }, { capture: true })
   let voyage: Voyage | undefined
 
   const applySettings = (d: SaveData) => {
@@ -40,6 +44,7 @@ async function boot(): Promise<void> {
   const resume = () => {
     if (voyage?.mode !== 'paused') return
     voyage.resume()
+    void audio.unlock()
     ui.show('hud')
     loop.resetAccumulator()
   }
@@ -51,7 +56,8 @@ async function boot(): Promise<void> {
       audio.startMusic()
       ui.show('hud')
       const p = save.data.progress
-      void voyage.enter(!p.completed.includes('junzi') && (p.junzi.haggleSolved || p.junzi.visited.length > 0) ? 'junzi' : 'hub')
+      const resumeChapter = p.lastChapter && isUnlocked(p, p.lastChapter) ? p.lastChapter : null
+      void voyage.enter(resumeChapter ?? (!p.completed.includes('junzi') && (p.junzi.haggleSolved || p.junzi.visited.length > 0) ? 'junzi' : 'hub'))
     },
     chartFromTitle: () => {
       if (!voyage) return
@@ -83,11 +89,9 @@ async function boot(): Promise<void> {
     },
     settings: patch => {
       const qualityChanged = patch.quality !== undefined && patch.quality !== save.data.quality
-      const styleChanged = patch.modelStyle !== undefined && patch.modelStyle !== save.data.modelStyle
       save.update(patch)
       applySettings(save.data)
       if (qualityChanged) voyage?.setQuality(save.data.quality)
-      if (styleChanged) void voyage?.changeModelStyle()
     },
     resetProgress: () => save.update({ progress: emptyProgress() }),
     interact: () => voyage?.interactNow(),
@@ -141,6 +145,7 @@ async function boot(): Promise<void> {
   loop.start()
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pause()
+    else void audio.unlock()
   })
   new TouchControls(document.getElementById('ui')!, input, () => v.mode === 'explore' || v.mode === 'dialog')
   window.setTimeout(() => ui.show('title'), 200)

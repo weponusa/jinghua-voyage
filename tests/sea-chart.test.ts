@@ -8,30 +8,32 @@ describe('sea chart group portrait', () => {
     const html = renderSeaChart(progress, 'junzi')
 
     expect((html.match(/<button class="port /g) ?? []).length).toBe(7)
-    expect(html).toMatch(/port--junzi is-open is-selected" data-port="junzi"[^>]*aria-pressed="true"/)
+    expect(html).toMatch(/port--junzi is-open is-selected has-portrait" data-port="junzi"[^>]*aria-pressed="true"/)
     for (const id of ['daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai']) {
-      expect(html).toMatch(new RegExp(`port--${id} is-soon" data-port="${id}"`))
+      expect(html).toMatch(new RegExp(`port--${id} is-locked has-portrait" data-port="${id}"`))
     }
-    expect(html).toContain('制作中。查看国家介绍')
+    expect(html).toContain('待解锁。查看国家介绍')
     expect(getPortState(progress, 'junzi')).toBe('open')
-    expect(getPortState(progress, 'penglai')).toBe('soon')
+    expect(getPortState(progress, 'penglai')).toBe('locked')
   })
 
-  it('shows an image only for safe ephemeral raster data URLs and retains a visible SVG fallback', () => {
-    const portrait = 'data:image/png;base64,iVBORw0KGgo='
-    const html = renderSeaChart(emptyProgress(), 'junzi', { junzi: portrait, daren: 'javascript:alert(1)' })
+  it('uses the painted chart and local artwork for every island without browser-rendered portraits', () => {
+    const html = renderSeaChart(emptyProgress(), 'junzi')
 
+    expect(html).toContain('class="sea-chart-art" src="/interface/sea-chart.webp"')
     expect(html).toContain('port--junzi is-open is-selected has-portrait')
-    expect(html).toContain(`src="${portrait}"`)
-    expect(html).toContain('class="island-placeholder"')
-    expect(html).not.toContain('javascript:alert')
+    for (const id of ['junzi', 'daren', 'liangmian', 'wuchang', 'baimin', 'heichi', 'penglai']) {
+      expect(html).toContain(`class="island-portrait" src="/interface/map-${id}.webp"`)
+    }
+    expect(html).not.toContain('data:image')
+    expect(html).not.toContain('island-placeholder')
   })
 
-  it('marks a finished chapter as done without calling unfinished stories open', () => {
+  it('marks a finished chapter as done and opens the next chapter', () => {
     const progress = { ...emptyProgress(), completed: ['junzi' as const] }
     const html = renderSeaChart(progress, 'junzi')
     expect(getPortState(progress, 'junzi')).toBe('done')
     expect(html).toMatch(/port--junzi is-done is-selected/)
-    expect(html).toMatch(/port--daren is-soon/)
+    expect(html).toMatch(/port--daren is-open/)
   })
 })

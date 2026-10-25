@@ -8,19 +8,25 @@ import { FollowCamera } from './camera'
 import type { Ctx, Interactable, Line, SceneDef } from './chapter'
 import { hub } from './chapters/hub'
 import { junzi } from './chapters/junzi'
-import { instance, preload, setModelStyle } from './models'
+import { daren } from './chapters/daren'
+import { liangmian } from './chapters/liangmian'
+import { wuchang } from './chapters/wuchang'
+import { baimin } from './chapters/baimin'
+import { heichi } from './chapters/heichi'
+import { penglai } from './chapters/penglai'
+import { instance, preload } from './models'
 import { disposeScene } from './dispose'
 import { createMapIllustration } from './map-illustration'
-import { JUNZI_MAP, distanceTo, type NavigationSnapshot, type SceneMap } from './navigation'
+import { JUNZI_MAP, SCENE_MAPS, distanceTo, type NavigationSnapshot, type SceneMap } from './navigation'
 import { Npc, type NpcSpec } from './npc'
 import { Player, type PlayerEvent } from './player'
-import { completeChapter, isUnlocked, updateJunzi, type ChapterId } from './progress'
+import { chapterCheckpoint, completeChapter, isUnlocked, KINGDOMS, TEST_ALL_CHAPTERS, updateChapterCheckpoint, updateJunzi, type ChapterId } from './progress'
 import { CHAPTERS } from './story'
 import { mirrorFlower, objectiveMarker, Stage } from './stage'
 import { WATER_Y } from './terrain'
 
-/** Scenes built so far; later chapters live in drafts/ until they are finished. */
-export const SCENES: Partial<Record<ChapterId | 'hub', SceneDef>> & { hub: SceneDef } = { hub, junzi }
+/** Complete seven-chapter voyage, with the first chapter's navigation and animation refinements. */
+export const SCENES: Record<ChapterId | 'hub', SceneDef> = { hub, junzi, daren, liangmian, wuchang, baimin, heichi, penglai }
 
 export type Mode = 'title' | 'loading' | 'explore' | 'dialog' | 'menu' | 'paused'
 
@@ -72,10 +78,6 @@ export class Voyage {
   private navigationTimer = 0
   private focus: Interactable | null = null
   private switching = false
-  private styleChanging = false
-  private styleRefreshPending = false
-  /** Seconds during which interaction presses are ignored (after a dialogue closes). */
-  private cooldown = 0
 
   constructor(private readonly renderer: Renderer, private readonly input: Input, private readonly audio: Audio, private readonly save: SaveStore, private readonly ui: VoyageUi) {}
 
@@ -91,29 +93,6 @@ export class Voyage {
     this.renderer.applyQuality(_q)
   }
 
-  async changeModelStyle(): Promise<void> {
-    this.styleRefreshPending = true
-    if (this.switching || this.styleChanging || !['title', 'paused', 'explore'].includes(this.mode)) return
-    this.styleChanging = true
-    try {
-      do {
-        this.styleRefreshPending = false
-        setModelStyle(this.save.data.modelStyle)
-        const previous = this.mode
-        if (previous === 'title') {
-          this.mode = 'loading'
-          await this.backdrop()
-          this.mode = 'title'
-        } else {
-          await this.enter(this.sceneId ?? 'hub', false)
-          if (previous === 'paused') this.mode = 'paused'
-        }
-      } while (this.styleRefreshPending)
-    } finally {
-      this.styleChanging = false
-    }
-  }
-
   /** Load and enter a scene with a paper-coloured fade. */
   async enter(id: ChapterId | 'hub', intro = true): Promise<void> {
     if (this.switching) return
@@ -122,15 +101,18 @@ export class Voyage {
     const def = SCENES[id] ?? SCENES.hub
     const label = id === 'hub' ? '返回海船' : `扬帆前往 · ${CHAPTERS[id].name}`
     this.mode = 'loading'
+    this.audio.setScene(id)
+    this.audio.setMusicMood('explore')
     this.ui.prompt(null)
     this.focus = null
     try {
-      setModelStyle(this.save.data.modelStyle)
+      this.audio.play('sail')
       await this.ui.veil(true, label, 0)
       await preload(['tangao', ...def.models], p => void this.ui.veil(true, label, p))
       const next = await this.build(def)
       const old = this.active
       this.active = next
+      this.save.update({ progress: { ...this.progress, lastChapter: id === 'hub' ? null : id } })
       this.ui.place(id === 'hub' ? '海船 · 甲板' : `${CHAPTERS[id].order === '终' ? '终章' : `第${CHAPTERS[id].order}章`} · ${CHAPTERS[id].name}`)
       this.ui.flowers(this.flowerTotal())
       this.updateNavigation(next)
@@ -151,14 +133,12 @@ export class Voyage {
       this.ui.toast('这一程未能载入，请从地图重试。进度已保留。')
     } finally {
       this.switching = false
-      this.cooldown = 0.3
       this.input.endFrame()
-      if (this.styleRefreshPending && !this.styleChanging) void this.changeModelStyle()
     }
   }
 
   private flowerTotal(): number {
-    return this.progress.completed.filter(id => id !== 'penglai').length + (this.progress.junzi.flowerCollected && !this.progress.completed.includes('junzi') ? 1 : 0)
+    return TEST_ALL_CHAPTERS ? 6 : KINGDOMS.filter(id => this.progress.completed.includes(id) || chapterCheckpoint(this.progress, id).flowerCollected).length
   }
 
   private async build(def: SceneDef): Promise<Active> {
@@ -179,7 +159,7 @@ export class Voyage {
     const voyage = this
     const a: Active = {
       def, stage, physics, player, cam, npcs: [], things: [], updaters: [], flower: null,
-      hasFlower: def.id === 'junzi' && this.progress.junzi.flowerCollected, target: null, marker, spawn: null,
+      hasFlower: def.id !== 'hub' && def.id !== 'penglai' && (TEST_ALL_CHAPTERS || chapterCheckpoint(this.progress, def.id).flowerCollected), target: null, marker, spawn: null,
       guide, map: JUNZI_MAP, objectiveText: '', trackedId: null,
       ctx: undefined as unknown as Ctx,
     }
@@ -188,6 +168,8 @@ export class Voyage {
       get progress() { return voyage.progress },
       get hasFlower() { return a.hasFlower },
       updateJunzi: patch => { this.save.update({ progress: updateJunzi(this.progress, patch) }) },
+      get checkpoint() { return chapterCheckpoint(voyage.progress, def.id as ChapterId) },
+      updateCheckpoint: patch => { if (def.id !== 'hub') this.save.update({ progress: updateChapterCheckpoint(this.progress, def.id, patch) }) },
       say: lines => this.say(lines),
       choose: (who, text, options) => this.choose(who, text, options),
       objective: (text, target) => {
@@ -224,7 +206,7 @@ export class Voyage {
     try {
       await def.build(a.ctx)
       a.map = this.makeMap(a)
-      if (def.id === 'junzi') a.map.illustration = createMapIllustration(stage.scene, a.map, [player.root, player.shadowMesh, marker, guide, ...a.npcs.map(npc => npc.root), ...(a.flower ? [a.flower] : [])])
+      a.map.illustration = createMapIllustration(stage.scene, a.map, [player.root, player.shadowMesh, marker, guide, ...a.npcs.map(npc => npc.root), ...(a.flower ? [a.flower] : [])])
       // Spawn on the ground (or wherever the chapter asked), never inside it.
       a.spawn ??= def.spawn.clone().setY(stage.groundHeight(def.spawn.x, def.spawn.z) + 0.9)
       player.teleport(a.spawn.clone())
@@ -244,7 +226,7 @@ export class Voyage {
     this.mode = 'menu'
     this.ui.prompt(null)
     let pick: ChapterId | null = null
-    try { pick = await this.ui.chart() } finally { this.mode = prev; this.input.endFrame(); this.cooldown = 0.3 }
+    try { pick = await this.ui.chart() } finally { this.mode = prev; this.input.endFrame() }
     if (pick) await this.enter(pick)
     return pick !== null
   }
@@ -262,20 +244,20 @@ export class Voyage {
     } finally {
       this.mode = 'explore'
       this.input.endFrame()
-      this.cooldown = 0.3
       this.updateNavigation(a)
     }
   }
 
   private makeMap(a: Active): SceneMap {
-    if (a.def.id === 'junzi') {
+    if (a.def.id !== 'hub') {
       const g = a.stage.ground!
+      const base = SCENE_MAPS[a.def.id]
       const coast = Array.from({ length: 96 }, (_, i) => {
         const angle = i / 96 * Math.PI * 2, r = g.coast(angle)
         return { x: g.cx + Math.cos(angle) * r, z: g.cz + Math.sin(angle) * r }
       })
       const dock = a.things.find(t => t.verb === '登船')
-      return { ...JUNZI_MAP, coast, landmarks: JUNZI_MAP.landmarks.map(l => l.id === 'dock' && dock ? { ...l, x: dock.pos.x, z: dock.pos.z } : { ...l }) }
+      return { ...base, coast, landmarks: base.landmarks.map(l => l.id === 'dock' && dock ? { ...l, x: dock.pos.x, z: dock.pos.z } : { ...l }) }
     }
     const table = a.things.find(t => t.name === '航海图')?.pos ?? new THREE.Vector3(-1.2, 0, -1.2)
     return {
@@ -293,20 +275,22 @@ export class Voyage {
     const p = a.player.root.position, target = a.target
     const pos = target instanceof THREE.Vector3 ? target : target?.getWorldPosition(new THREE.Vector3())
     const tracked = a.map.landmarks.find(l => l.id === a.trackedId)
+    const checkpoint = a.def.id === 'hub' ? null : chapterCheckpoint(this.progress, a.def.id)
     this.ui.navigation({
       map: a.map, player: { x: p.x, z: p.z, yaw: a.player.facing },
       objective: pos ? { x: pos.x, z: pos.z, text: a.objectiveText, distance: distanceTo(p, pos) } : null,
       tracked: tracked ? { ...tracked, distance: distanceTo(p, tracked) } : null,
-      visited: a.def.id === 'junzi' ? this.progress.junzi.visited : [],
-      chapter: { solved: this.progress.junzi.haggleSolved, collected: this.progress.junzi.flowerCollected, completed: this.progress.completed.includes('junzi') },
+      visited: checkpoint?.visited ?? [],
+      chapter: { solved: checkpoint?.solved ?? false, collected: checkpoint?.flowerCollected ?? false, completed: a.def.id !== 'hub' && this.progress.completed.includes(a.def.id) },
     })
   }
 
   private async finishChapter(id: ChapterId): Promise<void> {
-    if (!this.active?.hasFlower || this.mode === 'menu') return
+    if ((!this.active?.hasFlower && id !== 'penglai') || this.mode === 'menu') return
     const { progress, firstTime } = completeChapter(this.progress, id)
     this.save.update({ progress })
     this.mode = 'menu'
+    this.audio.setMusicMood('triumph')
     this.ui.prompt(null)
     if (id !== 'penglai') {
       this.ui.flowers(this.flowerTotal(), firstTime)
@@ -320,6 +304,7 @@ export class Voyage {
     if (!lines.length) return
     this.dialogDepth += 1
     this.mode = 'dialog'
+    this.audio.setMusicMood('dialog')
     this.ui.prompt(null)
     const talkers = this.active?.npcs.filter(n => lines.some(l => l.who === n.name)) ?? []
     talkers.forEach(n => (n.talking = true))
@@ -334,6 +319,7 @@ export class Voyage {
   async choose(who: string, text: string, options: string[]): Promise<number> {
     this.dialogDepth += 1
     this.mode = 'dialog'
+    this.audio.setMusicMood('dialog')
     this.ui.prompt(null)
     try {
       return await this.ui.choose(who, text, options)
@@ -346,22 +332,30 @@ export class Voyage {
     this.dialogDepth = Math.max(0, this.dialogDepth - 1)
     if (this.dialogDepth === 0 && this.mode === 'dialog') {
       this.mode = 'explore'
+      this.audio.setMusicMood('explore')
       // The key that closed the dialogue must not re-open it or make Tang Ao jump.
       this.input.endFrame()
-      this.cooldown = 0.3
     }
   }
 
   pause(): void {
-    if (this.mode === 'explore') this.mode = 'paused'
+    if (this.mode === 'explore') {
+      this.mode = 'paused'
+      this.audio.setMusicMood('dialog')
+    }
   }
 
   resume(): void {
-    if (this.mode === 'paused') this.mode = 'explore'
+    if (this.mode === 'paused') {
+      this.mode = 'explore'
+      this.audio.setMusicMood('explore')
+    }
   }
 
   toTitle(): void {
     this.mode = 'title'
+    this.audio.setScene('hub')
+    this.audio.setMusicMood('explore')
   }
 
   /** Fixed-step simulation. */
@@ -379,11 +373,17 @@ export class Voyage {
       dashPressed: false,
     }, a.cam.yaw, events)
     a.physics.step(dt)
-    for (const e of events) if (e.type === 'jump') this.audio.play('jump')
+    for (const e of events) {
+      if (e.type === 'jump' || e.type === 'land' || e.type === 'dash') this.audio.play(e.type)
+    }
     if (a.player.position.y < WATER_Y - 1.4) a.player.teleport((a.spawn ?? a.def.spawn).clone())
 
-    if (!exploring) return
-    this.cooldown = Math.max(0, this.cooldown - dt)
+    if (!exploring) {
+      // Clear stale edges on a simulation step, never on a render-only frame. At 120/144 Hz
+      // some frames have no fixed step; clearing there used to drop E before gameplay saw it.
+      this.input.endFrame()
+      return
+    }
     const p = a.player.position
     // Walk into the mirror flower to collect it.
     if (a.flower && !a.hasFlower && a.flower.position.distanceTo(p) < 1.6) {
@@ -391,7 +391,7 @@ export class Voyage {
       a.flower.removeFromParent()
       disposeScene(a.flower)
       a.flower = null
-      if (a.def.id === 'junzi') a.ctx.updateJunzi({ flowerCollected: true })
+      if (a.def.id !== 'hub') a.ctx.updateCheckpoint({ solved: true, flowerCollected: true })
       this.audio.play('pickup')
       this.ui.toast('镜花一枚，收入囊中。')
       this.ui.flowers(this.flowerTotal(), true)
@@ -400,12 +400,13 @@ export class Voyage {
     }
     this.focus = this.nearest(p)
     const pressed = this.input.consume('interact')
-    if (this.focus && pressed && !this.busy && this.cooldown <= 0) {
+    if (this.focus && pressed && !this.busy) {
       const it = this.focus
       this.busy = true
       this.audio.play('ui')
       Promise.resolve(it.run()).catch(err => console.error(err)).finally(() => { this.busy = false })
     }
+    this.input.endFrame()
   }
 
   private nearest(p: THREE.Vector3): Interactable | null {
@@ -429,7 +430,7 @@ export class Voyage {
 
   /** Trigger the focused interaction from the touch button. */
   interactNow(): void {
-    if (this.mode === 'explore' && this.focus && !this.busy && this.cooldown <= 0) {
+    if (this.mode === 'explore' && this.focus && !this.busy) {
       const it = this.focus
       this.busy = true
       this.audio.play('ui')
@@ -477,12 +478,10 @@ export class Voyage {
       this.ui.prompt(f ? { verb: typeof f.verb === 'function' ? f.verb() : f.verb, name: f.name } : null)
     }
     this.renderer.render(a.stage.scene, a.cam.camera)
-    this.input.endFrame()
   }
 
   /** A scenic backdrop for the title screen: the ship deck with a slow orbit. */
   async backdrop(): Promise<void> {
-    setModelStyle(this.save.data.modelStyle)
     await preload(['tangao', ...hub.models])
     const old = this.active
     this.active = await this.build(hub)

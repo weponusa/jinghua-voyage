@@ -63,7 +63,17 @@ kbd {
 .seal-logo.small { width: 72px; height: 72px; font-size: 22px; border-width: 3px; }
 .seal-logo.small span:first-child { font-size: 18px; }
 
-.boot { display: grid; place-content: center; justify-items: center; gap: 22px; background: var(--paper); }
+.boot { display: block; overflow: hidden; background: #0a3942; color: var(--paper); }
+.loading-art { position: absolute; inset: 0; display: block; }
+.loading-art img { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.92) brightness(.82); transform: scale(1.015); }
+.loading-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4, 33, 42, .18), rgba(4, 33, 42, .12) 42%, rgba(3, 29, 37, .88)), radial-gradient(ellipse at 50% 48%, transparent 25%, rgba(3, 29, 37, .36) 100%); }
+.boot-content, .veil-content { position: absolute; z-index: 1; left: 50%; bottom: calc(clamp(30px, 7vh, 72px) + var(--safe-b)); width: min(520px, 88vw); display: grid; justify-items: center; gap: 11px; transform: translateX(-50%); text-align: center; color: #f6ecd2; text-shadow: 0 2px 12px rgba(0, 24, 30, .64); }
+.loading-seal { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(238, 199, 116, .9); color: #f1cd7c; font-size: 20px; line-height: 1; transform: rotate(45deg); background: rgba(7, 57, 63, .48); box-shadow: 0 0 0 4px rgba(238, 199, 116, .09); }
+.loading-seal span { display: block; transform: rotate(-45deg); }
+.loading-kicker, .veil-tip { margin: 0; color: #e6d5ab; font-size: 11px; letter-spacing: .32em; }
+.boot-content .wave-mark, .veil-content .wave-mark { width: 56px; color: #e5c277; }
+.boot-title { margin: 0; color: #fff5da; font-size: 27px; font-weight: 400; letter-spacing: .42em; text-indent: .42em; }
+.boot-content .boot-tip { color: #e6d5ab; font-size: 11px; }
 .boot-bar, .veil-bar { width: min(280px, 60vw); height: 4px; background: var(--paper-3); border-radius: 2px; overflow: hidden; }
 .boot-bar i, .veil-bar i { display: block; height: 100%; background: var(--malachite); transform-origin: left; transform: scaleX(.04); transition: transform .3s var(--ease); }
 .boot-tip { margin: 0; color: var(--ink-2); letter-spacing: .3em; font-size: 14px; }
@@ -187,7 +197,7 @@ body.is-touch .prompt { bottom: calc(76px + var(--safe-b)); }
 body.is-touch .choice kbd { display: none; }
 
 /* ─── overlays ─────────────────────────────────────────── */
-.overlay { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(42,38,34,.45); opacity: 0; visibility: hidden; transition: opacity .3s, visibility 0s .3s; pointer-events: none; }
+.overlay { position: absolute; z-index: 20; inset: 0; display: grid; place-items: center; background: rgba(42,38,34,.45); opacity: 0; visibility: hidden; transition: opacity .3s, visibility 0s .3s; pointer-events: none; }
 .overlay.is-active { opacity: 1; visibility: visible; transition: opacity .3s; pointer-events: auto; }
 
 .chart-paper { width: min(1080px, 96vw); height: min(640px, 92vh); border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; border-top: 6px solid var(--azurite);
@@ -208,8 +218,7 @@ body.is-touch .choice kbd { display: none; }
 .port-name { padding: 2px 8px; background: rgba(243,234,215,.92); border-radius: 2px; font-size: 15px; letter-spacing: .12em; white-space: nowrap; }
 .port.is-open .port-dot { background: var(--malachite); border-color: var(--paper); animation: breathe 1.6s ease-in-out infinite; }
 .port.is-done .port-dot { border-color: var(--gold); }
-.port.is-locked, .port.is-soon { cursor: not-allowed; opacity: .5; filter: grayscale(1); }
-.port.is-soon .port-name::after { content: "·制作中"; font-size: .75em; opacity: .8; }
+.port.is-locked { cursor: not-allowed; opacity: .5; filter: grayscale(1); }
 .port.is-selected .port-name { background: var(--ink); color: var(--paper); }
 .chart-ship { position: absolute; width: 26px; height: 26px; margin: -44px 0 0 -13px; transition: left .5s var(--ease), top .5s var(--ease);
   background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 16h18l-3 4H6z' fill='%236b4429'/%3E%3Cpath d='M12 3v12H5z' fill='%23c8412f'/%3E%3Cpath d='M13 6v9h6z' fill='%23e7835a'/%3E%3C/svg%3E"); }
@@ -240,9 +249,12 @@ body.is-touch .choice kbd { display: none; }
 .ending-list b { flex: none; width: 5em; font-weight: 400; color: var(--malachite); letter-spacing: .1em; }
 .ending-last { line-height: 2; }
 
-.veil { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 16px; background: var(--paper); opacity: 0; visibility: hidden; transition: opacity .5s, visibility 0s .5s; pointer-events: none; }
+.veil { position: absolute; z-index: 40; inset: 0; overflow: hidden; background: #0a3942; opacity: 0; visibility: hidden; transition: opacity .5s, visibility 0s .5s; pointer-events: none; }
 .veil.is-active { opacity: 1; visibility: visible; transition: opacity .5s; pointer-events: auto; }
-.veil-label { margin: 0; font-size: 18px; letter-spacing: .3em; color: var(--ink); }
+.veil-label { margin: 0; color: #fff4d7; font-size: clamp(17px, 2.2vw, 22px); font-weight: 400; letter-spacing: .28em; text-indent: .28em; }
+.veil-content .veil-bar i { background: linear-gradient(90deg, #b9873d, #f0d18a); }
+.veil-content .veil-bar { background: rgba(245, 231, 192, .2); }
+.veil-tip { font-size: 10px; letter-spacing: .24em; opacity: .86; }
 
 .fatal { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; background: var(--paper); color: var(--vermilion); pointer-events: auto; }
 
@@ -264,9 +276,31 @@ body.is-touch .choice kbd { display: none; }
   .choice { padding: 7px 12px; font-size: 14px; }
   .quest-text { font-size: 14px; }
 }
+@media (orientation: landscape) and (max-height: 520px) {
+  .ending-scroll { width: min(1100px, calc(100vw - 20px)); max-height: calc(100dvh - 16px); padding: 12px 24px; }
+  .ending-scroll h2 { font-size: 24px; }
+  .ending-lead { margin: 4px 0; font-size: 13px; }
+  .ending-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 16px; margin: 4px 0 6px; }
+  .ending-list li { gap: 8px; padding: 4px 6px; font-size: 12px; line-height: 1.45; }
+  .ending-list b { width: 4em; }
+  .ending-last { margin: 6px 0; font-size: 13px; line-height: 1.55; }
+  .ending-scroll .btn { min-height: 36px; }
+}
+
 @media (max-height: 480px) {
   .chart-detail .cd-order, .chart-detail .cd-moral { display: none; }
   .dialog.is-choice { bottom: calc(6px + var(--safe-b)); }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .boot-content, .veil-content { bottom: calc(15px + var(--safe-b)); gap: 6px; }
+  .boot-content .loading-seal, .veil-content .loading-seal { width: 30px; height: 30px; font-size: 16px; }
+  .boot-content .wave-mark, .veil-content .wave-mark { width: 42px; }
+  .boot-content .boot-title { font-size: 19px; }
+  .veil-label { font-size: 16px; }
+}
+@media (orientation: portrait) {
+  .loading-art img { object-position: center 38%; }
+  .boot-content, .veil-content { bottom: calc(clamp(42px, 9vh, 90px) + var(--safe-b)); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -274,7 +308,7 @@ body.is-touch .choice kbd { display: none; }
 body:has(.dialog.is-active) .controls-hint, body:has(.dialog.is-active) .quest, body:has(.dialog.is-active) .prompt { opacity: 0; }
 
 
-/* ─── 海上拾花记：波印、导航小图与岛图 ─────────────────────────── */
+/* ─── 镜花缘：波印、导航小图与岛图 ─────────────────────────── */
 .paper, .panel, .dialog, .chart-paper, .seal-body, .ending-scroll, .quest, .title-menu, .local-map-paper {
   background-image:
     repeating-linear-gradient(12deg, rgba(74,66,58,.025) 0 1px, transparent 1px 6px),
@@ -284,7 +318,9 @@ body:has(.dialog.is-active) .controls-hint, body:has(.dialog.is-active) .quest, 
 .wave-mark { width: 94px; color: var(--azurite); display: grid; place-items: center; }
 .wave-mark svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 0 rgba(46,94,140,.12)); }
 .wave-mark--small { width: 66px; color: var(--malachite); }
-.boot-title { margin: -10px 0 0; font-size: 22px; letter-spacing: .42em; color: var(--ink); }
+.boot-content .boot-title { margin: -4px 0 0; font-size: 22px; letter-spacing: .42em; color: #fff5da; }
+.boot-content .boot-bar { background: rgba(245, 231, 192, .2); }
+.boot-content .boot-bar i { background: linear-gradient(90deg, #b9873d, #f0d18a); }
 .title-seal { line-height: 1.35; }
 
 /* HUD map is deliberately independent of the quest card so its live markers do not rebuild it. */
@@ -381,11 +417,10 @@ body:has(.dialog.is-active) .controls-hint, body:has(.dialog.is-active) .quest, 
 .chart-legend span::before { content: ''; width: 7px; height: 7px; border: 1px solid var(--ink-2); border-radius: 50%; background: var(--paper); }
 .chart-legend .is-open::before { background: var(--malachite); border-color: var(--malachite); }
 .chart-legend .is-done::before { background: var(--gold); border-color: var(--gold); }
-.chart-legend .is-soon::before { background: var(--paper-3); border-color: var(--paper-3); }
+.chart-legend .is-locked::before { background: var(--paper-3); border-color: var(--paper-3); }
 .port-state { padding: 1px 4px; background: rgba(243,234,215,.84); color: var(--ink-2); font-size: 10px; }
 .port.is-open .port-state { color: var(--malachite); }
 .port.is-done .port-state { color: #8c671d; }
-.port.is-soon .port-state { color: var(--ink-2); }
 .cd-build-note { padding: 7px 8px; border-left: 2px solid var(--gold); background: rgba(201,160,69,.08); font-size: 12px !important; }
 
 @media (max-width: 760px), (max-height: 560px) {

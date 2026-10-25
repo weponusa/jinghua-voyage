@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defaultSave, parseSave, SAVE_KEY, SaveStore } from '../src/engine/save'
-import { CHAPTER_ORDER, PLAYABLE, completeChapter, emptyProgress, flowerCount, isUnlocked, nextChapter, parseProgress } from '../src/game/progress'
+import { CHAPTER_ORDER, PLAYABLE, chapterCheckpoint, completeChapter, emptyProgress, flowerCount, isUnlocked, nextChapter, parseProgress, updateChapterCheckpoint } from '../src/game/progress'
 
 const ALL = CHAPTER_ORDER
 
@@ -62,5 +62,13 @@ describe('voyage progress', () => {
   it('requires every earlier chapter, even with a tampered save', () => {
     const p = parseProgress({ completed: ['heichi'] })
     expect(isUnlocked(p, 'penglai', ALL)).toBe(false)
+  })
+  it('merges chapter checkpoints without losing puzzle state or reviving collected flowers', () => {
+    let p = updateChapterCheckpoint(emptyProgress(), 'wuchang', { data: { talkedMiser: true, carryingBowl: 1 } })
+    p = updateChapterCheckpoint(p, 'wuchang', { data: { carryingBowl: -1, fed: [0, 1] }, visited: ['afu'] })
+    expect(chapterCheckpoint(p, 'wuchang')).toMatchObject({ data: { talkedMiser: true, carryingBowl: -1, fed: [0, 1] }, visited: ['afu'] })
+    p = updateChapterCheckpoint(p, 'wuchang', { solved: true, flowerCollected: true })
+    const restored = parseProgress(JSON.parse(JSON.stringify(p)))
+    expect(chapterCheckpoint(restored, 'wuchang')).toMatchObject({ solved: true, flowerCollected: true, data: { fed: [0, 1] } })
   })
 })

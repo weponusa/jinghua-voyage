@@ -1,4 +1,4 @@
-import { emptyProgress, parseProgress, type Progress } from '../game/progress'
+import { TEST_ALL_CHAPTERS, emptyProgress, parseProgress, type Progress } from '../game/progress'
 
 /**
  * Versioned local save. Everything the player keeps between sessions lives in one JSON record so
@@ -15,12 +15,11 @@ export type SaveData = {
   invertY: boolean
   quality: Quality
   reducedMotion: boolean
-  modelStyle: 'detailed' | 'chibi'
   /** Voyage progress: finished chapters and story flags. */
   progress: Progress
 }
 
-export const SAVE_KEY = 'jinghua.save'
+export const SAVE_KEY = TEST_ALL_CHAPTERS ? 'jinghua.save.test' : 'jinghua.save'
 
 export function defaultSave(): SaveData {
   return {
@@ -32,7 +31,6 @@ export function defaultSave(): SaveData {
     invertY: false,
     quality: 'high',
     reducedMotion: false,
-    modelStyle: 'detailed',
     progress: emptyProgress(),
   }
 }
@@ -61,7 +59,6 @@ export function parseSave(raw: string | null): SaveData {
     invertY: data.invertY === true,
     quality: data.quality === 'low' || data.quality === 'medium' || data.quality === 'high' ? data.quality : base.quality,
     reducedMotion: data.reducedMotion === true,
-    modelStyle: data.modelStyle === 'chibi' ? 'chibi' : 'detailed',
     progress: parseProgress(data.progress),
   }
 }

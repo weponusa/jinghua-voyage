@@ -85,7 +85,7 @@ function roadSign(stage: Stage, label: string, at: Point, rotY = 0): THREE.Group
 export const junzi: SceneDef = {
   id: 'junzi',
   palette: M.palette,
-  models: ['duojiugong', 'seller', 'buyer', 'elder', 'oilseller', 'paifang', 'market_stall', 'house', 'pavilion', 'chinese_pine', 'peach_tree', 'willow', 'taihu_rock', 'stone_lantern', 'lantern_post', 'small_boat'],
+  models: ['duojiugong', 'seller', 'buyer', 'elder', 'oilseller', 'paifang', 'market_stall', 'house', 'pavilion', 'chinese_pine', 'peach_tree', 'willow', 'taihu_rock', 'rock_largeA', 'rock_largeC', 'stone_lantern', 'lantern_post', 'small_boat'],
   spawn: new THREE.Vector3(0, 1.2, 17),
   yaw: 0,
   async build(ctx) {
@@ -108,6 +108,7 @@ export const junzi: SceneDef = {
       paths: JUNZI_PATHS.map(route => route.map(point => [point.x, point.z] as [number, number])),
       pathWidth: 2.2,
       foliage: {
+        form: 'garden',
         density: 1,
         flowers: ['#f6efe0', '#f3b5c5', '#f2d36b', '#e48d8d'],
         avoid: [{ x: COURTESY.x, z: COURTESY.z, r: 2 }],
@@ -159,7 +160,7 @@ export const junzi: SceneDef = {
     for (const [x, z, sc] of [[-6.8, 3.2, 1], [6.2, 3.8, 0.9], [-7.5, -4.5, 1.05], [6.8, -5.5, 0.95], [-3.5, -16, 1]] as const) await s.prop('peach_tree', x, 'ground', z, { rotY: x * 1.3, scale: sc, collider: 0.4 })
     for (const [x, z] of [[-6.5, 14.5], [7, 13.5], [-13, 9.5], [12.5, 9]] as const) await s.prop('willow', x, 'ground', z, { rotY: z, collider: 0.45 })
     for (const [x, z, sc] of [[-15, -6, 1], [-12, -12.5, 0.9], [-17, 0, 0.8], [3, -18, 0.9], [-9, -16.5, 0.85]] as const) await s.prop('chinese_pine', x, 'ground', z, { rotY: z, scale: sc, collider: 0.5 })
-    await s.scatter(0, 0, 9, R * 0.8, 7, ['taihu_rock'], 11, [
+    await s.scatter(0, 0, 9, R * 0.8, 7, ['taihu_rock', 'rock_largeA', 'rock_largeC'], 11, [
       { x: DOCK.x, z: DOCK.z, r: 4 }, { x: ARCH.x, z: ARCH.z, r: 4 }, { x: HILL.x, z: HILL.z, r: 5 }, { x: COURTESY.x, z: COURTESY.z, r: 3 },
       ...HOUSES.map(([x, z]) => ({ x, z, r: 4.5 })),
     ], 0, true, [0.35, 0.6])

@@ -7,15 +7,19 @@ export function disposeScene(root: THREE.Object3D): void {
   const textures = new Set<THREE.Texture>()
   root.traverse(o => {
     if (typeof o.userData.disposeCharacter === 'function') o.userData.disposeCharacter()
-    if (o.userData.sharedModel) return
-    const mesh = o as THREE.Mesh
-    if (mesh.isMesh) {
-      geometries.add(mesh.geometry)
-      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
-        materials.add(material)
-        for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value)
-        const uniforms = (material as THREE.ShaderMaterial).uniforms
-        if (uniforms) for (const u of Object.values(uniforms)) if (u.value instanceof THREE.Texture) textures.add(u.value)
+    const shared = o.userData.sharedModel === true
+    if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line) {
+      if (!shared) geometries.add(o.geometry)
+      if (!shared || o.userData.ownedMaterial === true) {
+        for (const material of Array.isArray(o.material) ? o.material : [o.material]) {
+          materials.add(material)
+          // A cloned material on a shared GLB still borrows the cached texture and geometry.
+          if (!shared) {
+            for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value)
+            const uniforms = (material as THREE.ShaderMaterial).uniforms
+            if (uniforms) for (const u of Object.values(uniforms)) if (u.value instanceof THREE.Texture) textures.add(u.value)
+          }
+        }
       }
     }
     if (o instanceof THREE.Light) (o as THREE.Light & { dispose?: () => void }).dispose?.()

@@ -20,7 +20,6 @@ export function mapCamera(map: SceneMap): THREE.OrthographicCamera {
  * Scene state is restored and only this renderer's resources are released.
  */
 export function createMapIllustration(scene: THREE.Scene, map: SceneMap, hide: THREE.Object3D[]): string | undefined {
-  if (map.id !== 'junzi') return undefined
   let renderer: THREE.WebGLRenderer | undefined
   const fog = scene.fog, background = scene.background
   const visibility = hide.map(object => ({ object, visible: object.visible }))

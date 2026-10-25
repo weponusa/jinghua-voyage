@@ -188,8 +188,8 @@ export const hub: SceneDef = {
         const next = nextChapter(ctx.progress)
         if (!next) {
           await ctx.say([
-            { who: NAMES.duo, text: '君子国这一章已经圆满收束：镜花在船，见闻也已记下。' },
-            { who: NAMES.duo, text: '海图上其余港口仍标作「制作中」，今日不再催唐兄起航。若想重游君子国，只管展开航海图。' },
+            { who: NAMES.duo, text: '六国镜花俱已归船，小蓬莱也留下了唐兄的足迹。这一趟海外奇游，总算圆满。' },
+            { who: NAMES.duo, text: '若想重温哪段见闻，只管展开航海图，七处港口随时都能再去走走。' },
           ])
           return
         }
@@ -201,7 +201,7 @@ export const hub: SceneDef = {
       },
     })
     const next = nextChapter(ctx.progress)
-    ctx.objective(next ? `到甲板中央展开航海图，前往${CHAPTERS[next].name}` : '第一章已完成 · 后续章节制作中，可展开航海图重游君子国', table)
+    ctx.objective(next ? `到甲板中央展开航海图，前往${CHAPTERS[next].name}` : '海外奇游已圆满 · 可展开航海图重游七处港口', table)
   },
   async start(ctx) {
     if (ctx.progress.prologueSeen) return

@@ -32,50 +32,76 @@ function addWind(mat: THREE.Material, strength: number): void {
   }
 }
 
-/** A tuft of five tapered blades, base at y = 0, colour graded dark root → light tip. */
-function tuftGeometry(base: THREE.Color, tip: THREE.Color): THREE.BufferGeometry {
+export type MeadowForm = 'garden' | 'cloud' | 'stern' | 'scrub' | 'academy' | 'wetland' | 'fairy'
+
+/** Region-specific blade count, height, width and lean; never just a palette swap. */
+function tuftGeometry(base: THREE.Color, tip: THREE.Color, form: MeadowForm): THREE.BufferGeometry {
   const pos: number[] = []
   const col: number[] = []
-  const r = rng(7)
-  for (let b = 0; b < 7; b += 1) {
-    const a = (b / 7) * Math.PI * 2 + r() * 0.6
-    const lean = 0.05 + r() * 0.08
-    const h = 0.14 + r() * 0.14
-    const w = 0.022 + r() * 0.012
-    const ox = Math.cos(a) * (0.04 + r() * 0.08)
-    const oz = Math.sin(a) * (0.04 + r() * 0.08)
-    const px = -Math.sin(a) * w
-    const pz = Math.cos(a) * w
-    const tx = ox + Math.cos(a) * lean
-    const tz = oz + Math.sin(a) * lean
-    pos.push(ox - px, 0, oz - pz, ox + px, 0, oz + pz, tx, h, tz)
-    for (const t of [0, 0, 1]) {
-      const c = base.clone().lerp(tip, t)
-      col.push(c.r, c.g, c.b)
+  const shapes = {
+    garden: { blades: 7, h: [0.12, 0.26], w: [0.010, 0.019], lean: [0.09, 0.25], seed: 7 },
+    cloud: { blades: 5, h: [0.22, 0.40], w: [0.013, 0.024], lean: [0.15, 0.36], seed: 17 },
+    stern: { blades: 5, h: [0.24, 0.43], w: [0.007, 0.013], lean: [0.025, 0.10], seed: 27 },
+    scrub: { blades: 4, h: [0.08, 0.19], w: [0.014, 0.026], lean: [0.13, 0.31], seed: 37 },
+    academy: { blades: 6, h: [0.08, 0.18], w: [0.010, 0.017], lean: [0.06, 0.16], seed: 47 },
+    wetland: { blades: 9, h: [0.30, 0.55], w: [0.006, 0.012], lean: [0.035, 0.17], seed: 57 },
+    fairy: { blades: 6, h: [0.15, 0.30], w: [0.010, 0.019], lean: [0.12, 0.28], seed: 67 },
+  } as const
+  const shape = shapes[form]
+  const r = rng(shape.seed)
+  const vertex = (x: number, y: number, z: number, t: number) => {
+    pos.push(x, y, z)
+    const c = base.clone().lerp(tip, t)
+    col.push(c.r, c.g, c.b)
+  }
+  for (let b = 0; b < shape.blades; b += 1) {
+    const a = (b / shape.blades) * Math.PI * 2 + r() * 0.6
+    const lean = shape.lean[0] + r() * (shape.lean[1] - shape.lean[0])
+    const h = shape.h[0] + r() * (shape.h[1] - shape.h[0])
+    const w = shape.w[0] + r() * (shape.w[1] - shape.w[0])
+    const ox = Math.cos(a) * (0.035 + r() * 0.075)
+    const oz = Math.sin(a) * (0.035 + r() * 0.075)
+    for (let segment = 0; segment < 2; segment += 1) {
+      const t0 = segment / 2
+      const t1 = (segment + 1) / 2
+      const w0 = w * (1 - t0 * 0.9)
+      const w1 = w * (1 - t1 * 0.9)
+      const x0 = ox + Math.cos(a) * lean * t0 * t0
+      const z0 = oz + Math.sin(a) * lean * t0 * t0
+      const x1 = ox + Math.cos(a) * lean * t1 * t1
+      const z1 = oz + Math.sin(a) * lean * t1 * t1
+      const p0x = -Math.sin(a) * w0, p0z = Math.cos(a) * w0
+      const p1x = -Math.sin(a) * w1, p1z = Math.cos(a) * w1
+      vertex(x0 - p0x, h * t0, z0 - p0z, t0); vertex(x0 + p0x, h * t0, z0 + p0z, t0); vertex(x1 + p1x, h * t1, z1 + p1z, t1)
+      vertex(x0 - p0x, h * t0, z0 - p0z, t0); vertex(x1 + p1x, h * t1, z1 + p1z, t1); vertex(x1 - p1x, h * t1, z1 - p1z, t1)
     }
   }
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
   g.computeVertexNormals()
-  // Point normals up so blades light like the ground they grow from (no dark backfaces).
   const n = g.getAttribute('normal') as THREE.BufferAttribute
   for (let i = 0; i < n.count; i += 1) n.setXYZ(i, 0, 1, 0)
   return g
 }
 
-/** Five-petal flower head on a short stem. */
-function flowerGeometry(): THREE.BufferGeometry {
+/** Flower silhouette varies by region: five cloud petals, dry four-petal blooms or fairy stars. */
+function flowerGeometry(form: MeadowForm): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = []
-  const stem = new THREE.CylinderGeometry(0.008, 0.01, 0.26, 3).translate(0, 0.13, 0)
+  const petalCount = form === 'scrub' ? 4 : form === 'cloud' || form === 'academy' ? 5 : form === 'fairy' ? 9 : 7
+  const stemHeight = form === 'wetland' ? 0.39 : form === 'scrub' ? 0.18 : 0.26
+  const stem = new THREE.CylinderGeometry(0.008, 0.01, stemHeight, 3).translate(0, stemHeight / 2, 0)
   parts.push(stem)
-  for (let i = 0; i < 5; i += 1) {
-    const a = (i / 5) * Math.PI * 2
-    const petal = new THREE.CircleGeometry(0.035, 5).rotateX(-Math.PI / 2 + 0.35).translate(0, 0.27, 0.03)
+  for (let i = 0; i < petalCount; i += 1) {
+    const a = (i / petalCount) * Math.PI * 2
+    const petal = new THREE.CircleGeometry(form === 'fairy' ? 0.052 : 0.043, form === 'stern' ? 4 : 8)
+      .scale(form === 'fairy' ? 0.34 : 0.64, form === 'cloud' ? 1.52 : 1.28, 1)
+      .rotateX(-Math.PI / 2 + (form === 'wetland' ? 0.78 : 0.42))
+      .translate(0, stemHeight + 0.01, form === 'fairy' ? 0.052 : 0.041)
     petal.rotateY(a)
     parts.push(petal)
   }
-  const heart = new THREE.SphereGeometry(0.018, 5, 3).translate(0, 0.28, 0)
+  const heart = new THREE.SphereGeometry(0.018, 5, 3).translate(0, stemHeight + 0.02, 0)
   parts.push(heart)
   // Stem/heart vertices are coloured separately from petals via the "color" attribute.
   const colored = parts.map((p, i) => {
@@ -107,6 +133,7 @@ function mergeSimple(geos: THREE.BufferGeometry[]): THREE.BufferGeometry {
 }
 
 export type FoliageOpts = {
+  form?: MeadowForm
   density: number
   grassBase: string
   grassTip: string
@@ -120,8 +147,8 @@ export type FoliageOpts = {
 export function plantMeadow(scene: THREE.Scene, island: Island, radius: number, opts: FoliageOpts): void {
   const rand = rng(opts.seed)
   const area = Math.PI * radius * radius
-  const tufts = Math.round(area * 4 * opts.density)
-  const flowersN = Math.round(tufts * (opts.flowerRatio ?? 0.08))
+  const tufts = Math.round(area * 5.5 * opts.density)
+  const flowersN = Math.round(tufts * (opts.flowerRatio ?? 0.1))
   const keep = (x: number, z: number) => island.isMeadow(x, z) && !(opts.avoid ?? []).some(a => Math.hypot(a.x - x, a.z - z) < a.r)
   const sample = (n: number, cb: (x: number, y: number, z: number, i: number) => void) => {
     let placed = 0
@@ -144,7 +171,9 @@ export function plantMeadow(scene: THREE.Scene, island: Island, radius: number, 
 
   const gMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })
   addWind(gMat, 1.2)
-  const grass = new THREE.InstancedMesh(tuftGeometry(new THREE.Color(opts.grassBase), new THREE.Color(opts.grassTip)), gMat, tufts)
+  const form = opts.form ?? 'garden'
+  const grass = new THREE.InstancedMesh(tuftGeometry(new THREE.Color(opts.grassBase), new THREE.Color(opts.grassTip), form), gMat, tufts)
+  grass.name = `meadow-grass-${form}`
   const tint = new THREE.Color()
   const count = sample(tufts, (x, y, z, i) => {
     q.setFromAxisAngle(up, rand() * Math.PI * 2)
@@ -162,7 +191,8 @@ export function plantMeadow(scene: THREE.Scene, island: Island, radius: number, 
   if (opts.flowers?.length && flowersN > 0) {
     const fMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })
     addWind(fMat, 0.6)
-    const flowers = new THREE.InstancedMesh(flowerGeometry(), fMat, flowersN)
+    const flowers = new THREE.InstancedMesh(flowerGeometry(form), fMat, flowersN)
+    flowers.name = `meadow-flowers-${form}`
     // Flowers grow in drifts: pick cluster centres, then scatter around them.
     const colors = opts.flowers.map(c => new THREE.Color(c))
     let n = 0
