@@ -4,12 +4,14 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 
 const base = process.env.URL ?? 'http://127.0.0.1:3003/'
+const scope = process.env.QA_SCOPE ?? 'all'
+if (!['all', 'covers', 'interaction', 'mobile'].includes(scope)) throw new Error(`Unknown QA_SCOPE: ${scope}`)
 const out = fileURLToPath(new URL('../shots/release-qa-2026-10-25/', import.meta.url))
 mkdirSync(out, { recursive: true })
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
 const errors = []
 const failedResponses = []
-const report = { covers: {}, normalLock: false, saveIsolation: false, singlePresses: 0 }
+const report = { scope, covers: {}, normalLock: false, saveIsolation: false, singlePresses: 0 }
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
 const page = await context.newPage()
 page.on('pageerror', e => errors.push(String(e)))
@@ -24,6 +26,7 @@ async function title(p) {
 }
 
 try {
+  if (scope === 'all' || scope === 'covers') {
   await page.goto(base)
   await title(page)
   const desktop = await page.evaluate(() => ({
@@ -56,10 +59,15 @@ try {
   assert.equal(isolated.normal, 1.4)
   assert(isolated.status.includes('独立测试存档'))
   report.saveIsolation = true
+  }
+  await page.close()
 
   // Force a 144 Hz rAF schedule. Render-only frames must not eat a single physical E press.
+  if (scope === 'all' || scope === 'interaction') {
   const fast = await context.newPage()
+  await fast.setViewportSize({ width: 960, height: 600 })
   fast.on('pageerror', e => errors.push(String(e)))
+  fast.on('response', r => { if (r.status() >= 400) failedResponses.push(`${r.status()} ${r.url()}`) })
   await fast.addInitScript(() => {
     let next = 1
     const timers = new Map()
@@ -104,10 +112,13 @@ try {
   }
   assert.equal(report.singlePresses, 10)
   await fast.close()
+  }
 
+  if (scope === 'all' || scope === 'mobile') {
   const portrait = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true })
   const phone = await portrait.newPage()
   phone.on('pageerror', e => errors.push(String(e)))
+  phone.on('response', r => { if (r.status() >= 400) failedResponses.push(`${r.status()} ${r.url()}`) })
   await phone.goto(base)
   await title(phone)
   const mobileCover = await phone.evaluate(() => document.querySelector('.title-cover img')?.currentSrc ?? '')
@@ -118,6 +129,7 @@ try {
   await phone.waitForTimeout(250)
   await phone.screenshot({ path: `${out}/title-phone-landscape.png` })
   await portrait.close()
+  }
 
   assert.deepEqual(errors, [])
   assert.deepEqual(failedResponses, [])
